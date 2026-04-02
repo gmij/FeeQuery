@@ -25,8 +25,8 @@
 | 百度云 | 公有云 | AccessKeyId / SecretAccessKey |
 | 火山引擎（字节跳动）| 公有云 | AccessKeyId / SecretAccessKey |
 | MiniMax | AI 模型 | GroupId / ApiKey（含透支金额检测）|
-| SiliconFlow | AI 模型 | ApiKey |
-| 万界坊州 | AI 模型 | ApiKey |
+| SiliconFlow | AI 模型 | accountid / __SF_auth.session-token |
+| 万界方舟 | AI 模型 | userid / password |
 
 ### 支持的通知渠道
 
