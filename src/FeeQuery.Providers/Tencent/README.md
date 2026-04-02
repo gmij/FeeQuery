@@ -9,7 +9,7 @@
 访问：https://console.cloud.tencent.com/
 
 ### 2. 创建API密钥
-1. 点击右上角用户名，选择"访问管��"
+1. 点击右上角用户名，选择"访问管理"
 2. 进入"API密钥管理"页面：https://console.cloud.tencent.com/cam/capi
 3. 点击"新建密钥"
 4. 保存生成的 **SecretId** 和 **SecretKey**

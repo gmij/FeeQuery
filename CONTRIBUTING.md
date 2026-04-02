@@ -8,7 +8,7 @@
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Git
 
-**可选**��
+**可选**：
 - Visual Studio 2022 17.x 或 JetBrains Rider 2024.x
 - Docker Desktop（用于容器测试）
 
