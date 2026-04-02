@@ -20,7 +20,6 @@ public class VolcanoProviderTest
     {
         _output = output;
 
-        // 创建日志记录器
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.AddConsole();
@@ -28,66 +27,54 @@ public class VolcanoProviderTest
         });
         var logger = loggerFactory.CreateLogger<VolcanoCloudProvider>();
 
-        // 创建HttpClientFactory
         var httpClientFactory = new TestHttpClientFactory();
-
         _provider = new VolcanoCloudProvider(httpClientFactory, logger);
     }
 
     [Fact]
     public async Task Test_ValidateCredentials()
     {
+        var accessKeyId = Environment.GetEnvironmentVariable("VOLCANO_ACCESS_KEY_ID");
+        var secretAccessKey = Environment.GetEnvironmentVariable("VOLCANO_SECRET_ACCESS_KEY");
+        if (string.IsNullOrEmpty(accessKeyId) || string.IsNullOrEmpty(secretAccessKey))
+        {
+            _output.WriteLine("跳过测试：未设置火山云凭证环境变量 VOLCANO_ACCESS_KEY_ID / VOLCANO_SECRET_ACCESS_KEY");
+            return;
+        }
+
         _output.WriteLine("开始测试火山云凭证验证...");
 
-        // 从数据库读取真实凭证进行测试
         var credentials = new CloudCredentials();
-        // 使用环境变量或用户机密提供真实凭证进行集成测试
-        credentials.SetCredential("AccessKeyId", Environment.GetEnvironmentVariable("VOLCANO_ACCESS_KEY_ID") ?? "YOUR_ACCESS_KEY_ID");
-        credentials.SetCredential("SecretAccessKey", Environment.GetEnvironmentVariable("VOLCANO_SECRET_ACCESS_KEY") ?? "YOUR_SECRET_ACCESS_KEY");
+        credentials.SetCredential("AccessKeyId", accessKeyId);
+        credentials.SetCredential("SecretAccessKey", secretAccessKey);
 
-        try
-        {
-            _output.WriteLine($"AccessKeyId: {credentials.GetCredential("AccessKeyId")}");
-            _output.WriteLine($"SecretAccessKey: {credentials.GetCredential("SecretAccessKey")?[..10]}...");
-
-            var result = await _provider.ValidateCredentialsAsync(credentials);
-
-            _output.WriteLine($"验证结果: {result}");
-            Assert.True(result, "凭证验证应该成功");
-        }
-        catch (Exception ex)
-        {
-            _output.WriteLine($"测试失败: {ex.Message}");
-            _output.WriteLine($"堆栈跟踪: {ex.StackTrace}");
-            throw;
-        }
+        var result = await _provider.ValidateCredentialsAsync(credentials);
+        _output.WriteLine($"验证结果: {result}");
+        Assert.True(result, "凭证验证应该成功");
     }
 
     [Fact]
     public async Task Test_GetAccountBalance()
     {
+        var accessKeyId = Environment.GetEnvironmentVariable("VOLCANO_ACCESS_KEY_ID");
+        var secretAccessKey = Environment.GetEnvironmentVariable("VOLCANO_SECRET_ACCESS_KEY");
+        if (string.IsNullOrEmpty(accessKeyId) || string.IsNullOrEmpty(secretAccessKey))
+        {
+            _output.WriteLine("跳过测试：未设置火山云凭证环境变量 VOLCANO_ACCESS_KEY_ID / VOLCANO_SECRET_ACCESS_KEY");
+            return;
+        }
+
         _output.WriteLine("开始测试火山云余额查询...");
 
         var credentials = new CloudCredentials();
-        credentials.SetCredential("AccessKeyId", Environment.GetEnvironmentVariable("VOLCANO_ACCESS_KEY_ID") ?? "YOUR_ACCESS_KEY_ID");
-        credentials.SetCredential("SecretAccessKey", Environment.GetEnvironmentVariable("VOLCANO_SECRET_ACCESS_KEY") ?? "YOUR_SECRET_ACCESS_KEY");
+        credentials.SetCredential("AccessKeyId", accessKeyId);
+        credentials.SetCredential("SecretAccessKey", secretAccessKey);
 
-        try
-        {
-            var balance = await _provider.GetAccountBalanceAsync(credentials);
-
-            _output.WriteLine($"可用余额: {balance.AvailableBalance} {balance.Currency}");
-            _output.WriteLine($"信用额度: {balance.CreditLimit} {balance.Currency}");
-            _output.WriteLine($"查询时间: {balance.QueryTime}");
-
-            Assert.NotNull(balance);
-        }
-        catch (Exception ex)
-        {
-            _output.WriteLine($"测试失败: {ex.Message}");
-            _output.WriteLine($"堆栈跟踪: {ex.StackTrace}");
-            throw;
-        }
+        var balance = await _provider.GetAccountBalanceAsync(credentials);
+        _output.WriteLine($"可用余额: {balance.AvailableBalance} {balance.Currency}");
+        _output.WriteLine($"信用额度: {balance.CreditLimit} {balance.Currency}");
+        _output.WriteLine($"查询时间: {balance.QueryTime}");
+        Assert.NotNull(balance);
     }
 
     /// <summary>
@@ -97,18 +84,10 @@ public class VolcanoProviderTest
     {
         public System.Net.Http.HttpClient CreateClient(string name)
         {
-            var handler = new System.Net.Http.HttpClientHandler
+            return new System.Net.Http.HttpClient
             {
-                // 设置较短的超时时间用于测试
-                // 如果需要使用代理，可以在这里配置
+                Timeout = TimeSpan.FromSeconds(30)
             };
-
-            var client = new System.Net.Http.HttpClient(handler)
-            {
-                Timeout = TimeSpan.FromSeconds(30) // 30秒超时
-            };
-
-            return client;
         }
     }
 }
