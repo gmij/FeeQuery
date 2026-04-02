@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FeeQuery.Core\FeeQuery.Core.csproj" />
+    <ProjectReference Include="..\FeeQuery.Shared\FeeQuery.Shared.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\Alibaba\FeeQuery.Providers.Alibaba.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\Baidu\FeeQuery.Providers.Baidu.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\Huawei\FeeQuery.Providers.Huawei.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\MiniMax\FeeQuery.Providers.MiniMax.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\SiliconFlow\FeeQuery.Providers.SiliconFlow.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\WanjieFangzhou\FeeQuery.Providers.WanjieFangzhou.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\Tencent\FeeQuery.Providers.Tencent.csproj" />
+    <ProjectReference Include="..\FeeQuery.Providers\Volcano\FeeQuery.Providers.Volcano.csproj" />
+    <ProjectReference Include="..\FeeQuery.Notifications\DingTalk\FeeQuery.Notifications.DingTalk.csproj" />
+    <ProjectReference Include="..\FeeQuery.Notifications\Smtp\FeeQuery.Notifications.Smtp.csproj" />
+
+    <!-- 源生成器引用 -->
+    <ProjectReference Include="..\FeeQuery.SourceGenerators\FeeQuery.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AntDesign" Version="1.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,444 @@
+@page "/balance-dashboard"
+@rendermode InteractiveServer
+@using FeeQuery.Core.Services
+@using FeeQuery.Shared.Models
+@using FeeQuery.Data
+@using Microsoft.EntityFrameworkCore
+@inherits BasePage
+@inject BalanceService BalanceService
+@inject ApplicationDbContext DbContext
+
+
+<div class="balance-dashboard">
+    <PageHeader Class="ant-page-header">
+        <PageHeaderTitle>
+            <div class="page-header-title">余额看板</div>
+        </PageHeaderTitle>
+        <PageHeaderSubtitle>
+            <div class="page-header-subtitle">实时监控各厂商账户余额</div>
+        </PageHeaderSubtitle>
+        <PageHeaderExtra>
+            <Button Type="@ButtonType.Primary"
+                    OnClick="RefreshAllBalances"
+                    Loading="@refreshing"
+                    Disabled="@refreshing"
+                    Class="refresh-button">
+                @if (!refreshing)
+                {
+                    <Icon Type="reload" Theme="@IconThemeType.Outline" />
+                }
+                刷新余额
+            </Button>
+        </PageHeaderExtra>
+    </PageHeader>
+
+    @if (loading)
+    {
+        <div class="loading-container">
+            <Spin Size="@SpinSize.Large" />
+        </div>
+    }
+    else
+    {
+        <div class="balance-dashboard-content">
+            <!-- 统计卡片行 -->
+            <Row Gutter="12" Class="stats-row">
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card">
+                        <Statistic Title="总余额"
+                                   Value="@totalBalance"
+                                   Precision="2"
+                                   Prefix="¥" />
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card">
+                        <Statistic Title="云厂商余额"
+                                   Value="@cloudBalance"
+                                   Precision="2"
+                                   Prefix="¥" />
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card stat-card-primary">
+                        <Statistic Title="AI模型余额"
+                                   Value="@aiBalance"
+                                   Precision="2"
+                                   Prefix="¥" />
+                    </Card>
+                </AntDesign.Col>
+            </Row>
+
+            <!-- 余额明细表格 -->
+            <div class="section-title">厂商余额明细</div>
+
+            <Card Bordered="false" Class="balance-table-card">
+                @if (balanceData.Count == 0)
+                {
+                    <Empty>
+                        <DescriptionTemplate>
+                            <span>暂无账号数据</span>
+                        </DescriptionTemplate>
+                        <ChildContent>
+                            <Button Type="@ButtonType.Primary" Href="/accounts">
+                                前往添加账号
+                            </Button>
+                        </ChildContent>
+                    </Empty>
+                }
+                else
+                {
+                    <Table TItem="BalanceDisplayModel"
+                           DataSource="@balanceData"
+                           Bordered="false"
+                           Size="@TableSize.Middle"
+                           RowClassName="@(record => record.Data.HasError ? "row-error" : "")">
+                        <Column Title="厂商信息" TData="string">
+                            <div class="provider-info">
+                                <div class="provider-avatar">
+                                    <Icon Type="@GetProviderIcon(context.ProviderCode)" Theme="@IconThemeType.Fill" />
+                                </div>
+                                <div class="provider-details">
+                                    <div class="provider-name">@context.AccountName</div>
+                                    <div class="provider-id">ID: @GetMaskedId(context.AccountId)</div>
+                                </div>
+                            </div>
+                        </Column>
+                        <Column Title="类型" TData="string">
+                            @GetAccountType(context.ProviderCode)
+                        </Column>
+                        <Column Title="状态" TData="string">
+                            <Space Size="@("small")">
+                                @if (context.HasError)
+                                {
+                                    <SpaceItem>
+                                        <Tag Color="@("error")">查询失败</Tag>
+                                    </SpaceItem>
+                                    @if (!string.IsNullOrEmpty(context.ErrorMessage))
+                                    {
+                                        <SpaceItem>
+                                            <Tooltip Title="@context.ErrorMessage">
+                                                <Icon Type="exclamation-circle" Theme="@IconThemeType.Fill" Style="color: #ff4d4f; font-size: 16px; cursor: help;" />
+                                            </Tooltip>
+                                        </SpaceItem>
+                                    }
+                                }
+                                else if (context.IsLowBalance || context.IsOverdrawn)
+                                {
+                                    <SpaceItem>
+                                        <Tag Color="@("error")">余额不足</Tag>
+                                    </SpaceItem>
+                                }
+                                else
+                                {
+                                    <SpaceItem>
+                                        <Tag Color="@("success")">正常</Tag>
+                                    </SpaceItem>
+                                }
+                            </Space>
+                        </Column>
+                        <Column Title="余额" TData="decimal">
+                            <Space Direction="@SpaceDirection.Vertical" Size="@("0")">
+                                <SpaceItem>
+                                    <Text Strong Class="@(context.HasError || context.IsLowBalance || context.IsOverdrawn ? "balance-error" : "balance-success")">
+                                        ¥@context.Balance.ToString("N2")
+                                    </Text>
+                                </SpaceItem>
+                                @if (context.CreditLimit.HasValue && context.CreditLimit.Value > 0)
+                                {
+                                    <SpaceItem>
+                                        <Text Type="@TextElementType.Secondary" Style="font-size: 12px;">
+                                            信用额: ¥@context.CreditLimit.Value.ToString("N2")
+                                        </Text>
+                                    </SpaceItem>
+                                }
+                            </Space>
+                        </Column>
+                        <Column Title="总有效额度" TData="decimal">
+                            <Text Strong Style="color: #10b981; font-size: 15px;">
+                                ¥@context.TotalAvailable.ToString("N2")
+                            </Text>
+                        </Column>
+                        <Column Title="更新时间" TData="string">
+                            @(context.LastSyncTime.HasValue ? GetTimeAgo(context.LastSyncTime.Value) : "未同步")
+                        </Column>
+                        <ActionColumn Title="操作" Width="100">
+                            <Button Type="@ButtonType.Default"
+                                    Size="@ButtonSize.Small"
+                                    OnClick="() => RefreshSingleBalance(context.AccountId)"
+                                    Loading="@context.IsRefreshing"
+                                    Disabled="@context.IsRefreshing">
+                                @if (!context.IsRefreshing)
+                                {
+                                    <Icon Type="reload" Theme="@IconThemeType.Outline" />
+                                }
+                                刷新
+                            </Button>
+                        </ActionColumn>
+                    </Table>
+                }
+            </Card>
+        </div>
+    }
+</div>
+
+@code {
+    private bool loading = true;
+    private bool refreshing = false;
+    private decimal totalBalance = 0;
+    private decimal cloudBalance = 0;
+    private decimal aiBalance = 0;
+    private List<BalanceDisplayModel> balanceData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBalanceData();
+    }
+
+    private async Task LoadBalanceData()
+    {
+        loading = true;
+        try
+        {
+            var accounts = await DbContext.CloudAccounts
+                .Where(a => a.IsEnabled)
+                .ToListAsync();
+
+            balanceData.Clear();
+            totalBalance = 0;
+            cloudBalance = 0;
+            aiBalance = 0;
+
+            foreach (var account in accounts)
+            {
+                try
+                {
+                    var latest = await BalanceService.GetLatestBalanceHistoryAsync(account.Id);
+
+                    // 检查是否同步失败
+                    bool hasSyncError = latest?.Status == "Failed";
+                    string? syncErrorMessage = hasSyncError ? latest?.ErrorMessage : null;
+
+                    var balance = latest?.AvailableBalance ?? 0;
+
+                    balanceData.Add(new BalanceDisplayModel
+                    {
+                        AccountId = account.Id,
+                        AccountName = account.Name,
+                        ProviderName = account.ProviderName,
+                        ProviderCode = account.ProviderCode,
+                        Balance = balance,
+                        CreditLimit = latest?.CreditLimit,
+                        LastSyncTime = latest?.RecordedAt.ToLocalTime(),
+                        IsLowBalance = latest != null && !hasSyncError && await CheckIsLowBalance(account.Id, latest.AvailableBalance),
+                        HasError = hasSyncError,
+                        ErrorMessage = syncErrorMessage
+                    });
+
+                    // 只有同步成功时才计入总余额
+                    if (!hasSyncError)
+                    {
+                        totalBalance += balance;
+
+                        // 区分云厂商和AI模型
+                        if (IsCloudProvider(account.ProviderCode))
+                        {
+                            cloudBalance += balance;
+                        }
+                        else
+                        {
+                            aiBalance += balance;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 加载失败时，添加带错误信息的记录
+                    balanceData.Add(new BalanceDisplayModel
+                    {
+                        AccountId = account.Id,
+                        AccountName = account.Name,
+                        ProviderName = account.ProviderName,
+                        ProviderCode = account.ProviderCode,
+                        Balance = 0,
+                        CreditLimit = null,
+                        LastSyncTime = null,
+                        IsLowBalance = false,
+                        HasError = true,
+                        ErrorMessage = ex.Message
+                    });
+                }
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task<bool> CheckIsLowBalance(int accountId, decimal balance)
+    {
+        var alertRule = await DbContext.AlertRules
+            .Where(r => r.IsEnabled &&
+                       r.AlertType == "balance" &&
+                       (r.CloudAccountId == accountId || r.CloudAccountId == null))
+            .FirstOrDefaultAsync();
+
+        if (alertRule == null) return false;
+
+        return alertRule.ComparisonOperator switch
+        {
+            "less_than" => balance < alertRule.Threshold,
+            "less_than_or_equal" => balance <= alertRule.Threshold,
+            _ => false
+        };
+    }
+
+    private async Task RefreshAllBalances()
+    {
+        refreshing = true;
+        try
+        {
+            await ExecuteAsync(async () =>
+            {
+                var accounts = await DbContext.CloudAccounts
+                    .Where(a => a.IsEnabled)
+                    .ToListAsync();
+
+                foreach (var account in accounts)
+                {
+                    try
+                    {
+                        await BalanceService.RefreshAndSaveBalanceAsync(account.Id, "manual");
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowError($"刷新账号 {account.Name} 失败：{ex.Message}");
+                    }
+                }
+
+                await LoadBalanceData();
+                await ShowSuccess("余额刷新成功");
+            }, "刷新余额");
+        }
+        finally
+        {
+            refreshing = false;
+        }
+    }
+
+    private async Task RefreshSingleBalance(int accountId)
+    {
+        var item = balanceData.FirstOrDefault(x => x.AccountId == accountId);
+        if (item == null) return;
+
+        item.IsRefreshing = true;
+        StateHasChanged();
+
+        try
+        {
+            await BalanceService.RefreshAndSaveBalanceAsync(accountId, "manual");
+
+            // 重新加载该账号的余额数据
+            var account = await DbContext.CloudAccounts.FindAsync(accountId);
+            if (account != null)
+            {
+                var latest = await BalanceService.GetLatestBalanceHistoryAsync(accountId);
+
+                // 检查是否同步失败
+                bool hasSyncError = latest?.Status == "Failed";
+                string? syncErrorMessage = hasSyncError ? latest?.ErrorMessage : null;
+
+                var balance = latest?.AvailableBalance ?? 0;
+
+                item.Balance = balance;
+                item.LastSyncTime = latest?.RecordedAt.ToLocalTime();
+                item.IsLowBalance = latest != null && !hasSyncError && await CheckIsLowBalance(accountId, latest.AvailableBalance);
+                item.HasError = hasSyncError;
+                item.ErrorMessage = syncErrorMessage;
+
+                // 重新计算总额
+                await LoadBalanceData();
+
+                if (hasSyncError)
+                {
+                    await ShowError($"账号 {item.AccountName} 同步失败：{syncErrorMessage}");
+                }
+                else
+                {
+                    await ShowSuccess($"账号 {item.AccountName} 刷新成功");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            item.HasError = true;
+            item.ErrorMessage = ex.Message;
+            await ShowError($"刷新账号 {item.AccountName} 失败：{ex.Message}");
+        }
+        finally
+        {
+            item.IsRefreshing = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool IsCloudProvider(string providerCode)
+    {
+        return providerCode.ToLower() switch
+        {
+            "volcano" or "alibaba" or "tencent" or "baidu" or "huawei" => true,
+            _ => false
+        };
+    }
+
+    private string GetProviderIcon(string providerCode)
+    {
+        return IsCloudProvider(providerCode) ? "cloud" : "api";
+    }
+
+    private string GetAccountType(string providerCode)
+    {
+        return IsCloudProvider(providerCode) ? "云厂商" : "AI模型";
+    }
+
+    private string GetMaskedId(int id)
+    {
+        return $"{id.ToString().Substring(0, Math.Min(4, id.ToString().Length))}***{id.ToString().Substring(Math.Max(0, id.ToString().Length - 3))}";
+    }
+
+    private string GetTimeAgo(DateTime time)
+    {
+        var span = DateTime.Now - time;
+
+        if (span.TotalMinutes < 1)
+            return "刚刚";
+        if (span.TotalMinutes < 60)
+            return $"{(int)span.TotalMinutes}分钟前";
+        if (span.TotalHours < 24)
+            return $"{(int)span.TotalHours}小时前";
+
+        return time.ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private class BalanceDisplayModel
+    {
+        public int AccountId { get; set; }
+        public string AccountName { get; set; } = string.Empty;
+        public string ProviderName { get; set; } = string.Empty;
+        public string ProviderCode { get; set; } = string.Empty;
+        public decimal Balance { get; set; }
+        public decimal? CreditLimit { get; set; }
+        public DateTime? LastSyncTime { get; set; }
+        public bool IsLowBalance { get; set; }
+        public bool IsOverdrawn => Balance < 0;
+        public bool HasError { get; set; }
+        public string? ErrorMessage { get; set; }
+        public bool IsRefreshing { get; set; }
+
+        /// <summary>
+        /// 总有效额度 = 可用余额 + 信用额度
+        /// </summary>
+        public decimal TotalAvailable => Balance + (CreditLimit ?? 0);
+    }
+}

@@ -1,0 +1,376 @@
+@page "/backup"
+@rendermode InteractiveServer
+@using FeeQuery.Core.Services
+@using FeeQuery.Shared.Models
+@inject BackupService BackupService
+@inject IMessageService Message
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="backup-page">
+<PageHeader Class="ant-page-header">
+    <PageHeaderTitle>
+        <div class="page-header-title">备份管理</div>
+    </PageHeaderTitle>
+    <PageHeaderSubtitle>
+        <div class="page-header-subtitle">配置变更时自动备份，也可手动创建完整备份</div>
+    </PageHeaderSubtitle>
+</PageHeader>
+
+<div class="backup-content">
+    <div class="table-section">
+        <div class="table-header">
+            <Space>
+                <SpaceItem>
+                    <Popconfirm Title="@("创建完整备份（JSON 格式）？")"
+                                OnConfirm="RunManualBackup"
+                                OkText="@("立即备份")"
+                                CancelText="@("取消")">
+                        <Button Type="@ButtonType.Primary" Loading="@creatingBackup">
+                            <Icon Type="cloud-upload" Theme="@IconThemeType.Outline" />
+                            立即备份
+                        </Button>
+                    </Popconfirm>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button OnClick="ShowUploadRestoreModal">
+                        <Icon Type="upload" Theme="@IconThemeType.Outline" />
+                        上传文件恢复
+                    </Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button OnClick="LoadBackupList" Loading="@loading">
+                        <Icon Type="reload" />
+                        刷新
+                    </Button>
+                </SpaceItem>
+            </Space>
+        </div>
+
+        <Table TItem="BackupRecord"
+               DataSource="@backupList"
+               Loading="@loading"
+               Bordered
+               ScrollX="1400"
+               RowKey="@(r => r.Id.ToString())">
+            <PropertyColumn Property="r => r.CreatedAt" Title="备份时间" Width="160">
+                @context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+            </PropertyColumn>
+            <PropertyColumn Property="r => r.BackupType" Title="类型" Width="80">
+                @switch (context.BackupType)
+                {
+                    case "Full":
+                        <Tag Color="@("blue")">完整</Tag>
+                        break;
+                    case "Config":
+                        <Tag Color="@("purple")">配置</Tag>
+                        break;
+                    default:
+                        <Tag>@context.BackupType</Tag>
+                        break;
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="r => r.Status" Title="状态" Width="80">
+                @if (context.Status == "Success")
+                {
+                    <div class="status-badge status-badge-success">成功</div>
+                }
+                else
+                {
+                    <Tooltip Title="@context.ErrorMessage">
+                        <div class="status-badge status-badge-error">失败</div>
+                    </Tooltip>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="r => r.TotalRecords" Title="记录数" Width="90" />
+            <PropertyColumn Property="r => r.FileSizeBytes" Title="大小" Width="90">
+                @FormatFileSize(context.FileSizeBytes)
+            </PropertyColumn>
+            <PropertyColumn Property="r => r.IsAutomatic" Title="触发" Width="80">
+                @if (context.IsAutomatic)
+                {
+                    <Tag>自动</Tag>
+                }
+                else
+                {
+                    <Tag Color="@("blue")">手动</Tag>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="r => r.Remark" Title="备注" Width="200">
+                @if (!string.IsNullOrEmpty(context.Remark))
+                {
+                    <Tooltip Title="@context.Remark" Placement="@Placement.TopLeft">
+                        <span class="backup-remark">@context.Remark</span>
+                    </Tooltip>
+                }
+                else
+                {
+                    <span style="color:#aaa">-</span>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="r => r.FileName" Title="文件路径">
+                <div class="backup-filepath">
+                    <span class="backup-filepath-text">@(backupDir + Path.DirectorySeparatorChar + context.FileName)</span>
+                    <Tooltip Title="@("复制完整路径")">
+                        <Button Size="@ButtonSize.Small"
+                                Type="@ButtonType.Text"
+                                OnClick="() => CopyPath(context.FileName)">
+                            <Icon Type="copy" />
+                        </Button>
+                    </Tooltip>
+                </div>
+            </PropertyColumn>
+            <ActionColumn Title="操作" Width="200" Fixed="@ColumnFixPlacement.Right">
+                <div class="action-buttons">
+                    <Button Size="@ButtonSize.Small"
+                            Disabled="@(context.Status != "Success")"
+                            OnClick="() => DownloadBackup(context.Id)">
+                        <Icon Type="download" /> 下载
+                    </Button>
+                    <Popconfirm Title="确定要从此备份恢复？恢复将覆盖当前数据，建议先备份！"
+                                OnConfirm="() => RestoreBackup(context.Id)"
+                                Disabled="@(context.Status != "Success" || context.Format != "Json")">
+                        <Button Size="@ButtonSize.Small"
+                                Disabled="@(context.Status != "Success" || context.Format != "Json")"
+                                Danger>
+                            <Icon Type="rollback" /> 恢复
+                        </Button>
+                    </Popconfirm>
+                    <Popconfirm Title="确定要删除此备份记录和文件吗？"
+                                OnConfirm="() => DeleteBackup(context.Id)">
+                        <a class="action-link action-link-danger">删除</a>
+                    </Popconfirm>
+                </div>
+            </ActionColumn>
+        </Table>
+    </div>
+</div>
+</div>
+
+<!-- 恢复确认模态框 -->
+<Modal Title="@("从备份恢复")"
+       @bind-Visible="@restoreModalVisible"
+       OnOk="ConfirmRestore"
+       OkText="@("确认恢复")"
+       CancelText="@("取消")"
+       OkButtonProps="@(new ButtonProps { Danger = true, Loading = restoring })">
+    <Alert Type="@AlertType.Warning"
+           ShowIcon="true"
+           Message="恢复操作将覆盖现有数据，此操作不可撤销！建议在恢复前先创建完整备份。" />
+    <div style="margin-top: 16px;">
+        <p>即将从备份 <Text Code>@restoreFileName</Text> 恢复数据，确认继续？</p>
+    </div>
+</Modal>
+
+<!-- 上传文件恢复模态框 -->
+<Modal Title="@("上传备份文件恢复")"
+       @bind-Visible="@uploadRestoreVisible"
+       OnOk="ConfirmUploadRestore"
+       OkText="@("开始恢复")"
+       CancelText="@("取消")"
+       OkButtonProps="@(new ButtonProps { Danger = true, Loading = restoring, Disabled = uploadedFile == null })">
+    <Alert Type="@AlertType.Warning"
+           ShowIcon="true"
+           Message="恢复操作将覆盖现有数据，此操作不可撤销！建议在恢复前先创建完整备份。" />
+    <div style="margin-top: 16px;">
+        <p>请选择本地 JSON 格式的备份文件（.json）：</p>
+        <InputFile id="backupFileInput"
+                   OnChange="HandleUploadedFile"
+                   accept=".json"
+                   style="display:none" />
+        <Space>
+            <SpaceItem>
+                <Button OnClick="@TriggerFileInput">
+                    <Icon Type="folder-open" /> 选择文件
+                </Button>
+            </SpaceItem>
+            @if (uploadedFile != null)
+            {
+                <SpaceItem>
+                    <Text>@uploadedFile.Name (@FormatFileSize(uploadedFile.Size))</Text>
+                </SpaceItem>
+            }
+        </Space>
+    </div>
+</Modal>
+
+@code {
+    private List<BackupRecord> backupList = new();
+    private bool loading = false;
+    private bool creatingBackup = false;
+    private bool restoring = false;
+    private bool restoreModalVisible = false;
+    private bool uploadRestoreVisible = false;
+    private string restoreFileName = "";
+    private int restoreBackupId = 0;
+    private string backupDir = "";
+    private IBrowserFile? uploadedFile = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        backupDir = BackupService.GetBackupDirectory();
+        await LoadBackupList();
+    }
+
+    private async Task LoadBackupList()
+    {
+        loading = true;
+        try
+        {
+            backupList = await BackupService.GetBackupListAsync();
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"加载备份列表失败: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task RunManualBackup()
+    {
+        creatingBackup = true;
+        try
+        {
+            var record = await BackupService.CreateBackupAsync("Full", "Json", isAutomatic: false);
+            if (record.Status == "Success")
+            {
+                Message.Success($"备份成功：{record.FileName}");
+                await LoadBackupList();
+            }
+            else
+            {
+                Message.Error($"备份失败：{record.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"备份失败: {ex.Message}");
+        }
+        finally
+        {
+            creatingBackup = false;
+        }
+    }
+
+    private void DownloadBackup(int id)
+    {
+        Navigation.NavigateTo($"/api/backup/{id}/download", forceLoad: true);
+    }
+
+    private async Task RestoreBackup(int id)
+    {
+        var record = await BackupService.GetBackupRecordAsync(id);
+        if (record == null) return;
+
+        restoreBackupId = id;
+        restoreFileName = record.FileName;
+        restoreModalVisible = true;
+    }
+
+    private async Task ConfirmRestore()
+    {
+        restoring = true;
+        try
+        {
+            var filePath = await BackupService.GetBackupFilePathAsync(restoreBackupId);
+            if (filePath == null)
+            {
+                Message.Error("备份文件不存在");
+                return;
+            }
+
+            await using var stream = File.OpenRead(filePath);
+            await BackupService.RestoreFromJsonAsync(stream);
+
+            restoreModalVisible = false;
+            Message.Success("数据恢复成功");
+            await LoadBackupList();
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"恢复失败: {ex.Message}");
+        }
+        finally
+        {
+            restoring = false;
+        }
+    }
+
+    private async Task DeleteBackup(int id)
+    {
+        try
+        {
+            await BackupService.DeleteBackupAsync(id);
+            Message.Success("删除成功");
+            await LoadBackupList();
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"删除失败: {ex.Message}");
+        }
+    }
+
+    private void ShowUploadRestoreModal()
+    {
+        uploadedFile = null;
+        uploadRestoreVisible = true;
+    }
+
+    private async Task TriggerFileInput()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('backupFileInput').click()");
+    }
+
+    private void HandleUploadedFile(InputFileChangeEventArgs e)
+    {
+        uploadedFile = e.File;
+    }
+
+    private async Task ConfirmUploadRestore()
+    {
+        if (uploadedFile == null) return;
+
+        restoring = true;
+        try
+        {
+            await using var stream = uploadedFile.OpenReadStream(maxAllowedSize: 100 * 1024 * 1024);
+            await BackupService.RestoreFromJsonAsync(stream);
+
+            uploadRestoreVisible = false;
+            Message.Success("数据恢复成功");
+            await LoadBackupList();
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"恢复失败: {ex.Message}");
+        }
+        finally
+        {
+            restoring = false;
+        }
+    }
+
+    private async Task CopyPath(string fileName)
+    {
+        var fullPath = Path.Combine(backupDir, fileName);
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", fullPath);
+            Message.Success("路径已复制");
+        }
+        catch
+        {
+            Message.Info($"路径：{fullPath}");
+        }
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / 1024.0 / 1024.0:F1} MB";
+    }
+}

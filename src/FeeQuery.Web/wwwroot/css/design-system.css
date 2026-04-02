@@ -1,0 +1,278 @@
+/* FeeQuery Design System - 全局样式变量
+ *
+ * 此文件定义了整个应用的设计系统变量
+ * 包括颜色、字体、间距、圆角等统一规范
+ *
+ * 最后更新: 2026-01-27
+ * 版本: 2.0
+ */
+
+:root {
+    /* ========== 颜色系统 ========== */
+
+    /* 主色调 */
+    --color-primary: #8B5CF6;
+    --color-primary-light: #A78BFA;
+    --color-primary-dark: #7C3AED;
+    --color-primary-bg: #E9D5FF;
+
+    /* 文字颜色 */
+    --color-text-primary: #18181B;
+    --color-text-secondary: #71717A;
+    --color-text-disabled: #A1A1AA;
+
+    /* 背景颜色 */
+    --color-bg-primary: #FFFFFF;
+    --color-bg-secondary: #F9FAFB;
+    --color-bg-tertiary: #F4F4F5;
+
+    /* 状态颜色 - Success */
+    --color-success: #059669;
+    --color-success-light: #10B981;
+    --color-success-bg: #D1FAE5;
+    --color-success-border: #A7F3D0;
+
+    /* 状态颜色 - Error */
+    --color-error: #DC2626;
+    --color-error-light: #EF4444;
+    --color-error-bg: #FEE2E2;
+    --color-error-border: #FECACA;
+
+    /* 状态颜色 - Warning */
+    --color-warning: #F59E0B;
+    --color-warning-light: #FBBF24;
+    --color-warning-bg: #FEF3C7;
+    --color-warning-border: #FDE68A;
+
+    /* 状态颜色 - Info */
+    --color-info: #3B82F6;
+    --color-info-light: #60A5FA;
+    --color-info-bg: #DBEAFE;
+    --color-info-border: #BFDBFE;
+
+    /* 边框颜色 */
+    --color-border: #E4E4E7;
+    --color-border-light: #F4F4F5;
+    --color-border-dark: #D4D4D8;
+
+    /* 云厂商颜色 */
+    --color-volcano: #6366F1;
+    --color-volcano-bg: #EEF2FF;
+    --color-alibaba: #F59E0B;
+    --color-alibaba-bg: #FEF3C7;
+    --color-tencent: #3B82F6;
+    --color-tencent-bg: #DBEAFE;
+    --color-baidu: #6366F1;
+    --color-baidu-bg: #E0E7FF;
+    --color-huawei: #DC2626;
+    --color-huawei-bg: #FECACA;
+    --color-minimax: #8B5CF6;
+    --color-minimax-bg: #E9D5FF;
+
+    /* ========== 字体系统 ========== */
+
+    /* 字体家族 */
+    --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-family-code: 'Monaco', 'Consolas', 'Courier New', monospace;
+
+    /* 字体大小 */
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+    --font-size-md: 15px;
+    --font-size-lg: 18px;
+    --font-size-xl: 22px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 28px;
+
+    /* 字重 */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    /* 行高 */
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+
+    /* ========== 间距系统 ========== */
+
+    /* 内边距 */
+    --spacing-xs: 6px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-base: 14px;
+    --spacing-lg: 16px;
+    --spacing-xl: 18px;
+    --spacing-2xl: 20px;
+    --spacing-3xl: 24px;
+    --spacing-4xl: 32px;
+    --spacing-5xl: 40px;
+
+    /* Section间距 */
+    --section-gap: 24px;
+    --section-gap-lg: 32px;
+
+    /* 卡片间距 */
+    --card-gap: 12px;
+    --card-gap-md: 16px;
+    --card-gap-lg: 20px;
+
+    /* ========== 圆角系统 ========== */
+
+    --radius-sm: 8px;
+    --radius-base: 10px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+
+    /* ========== 组件尺寸 ========== */
+
+    /* 统计卡片 */
+    --stat-card-height: 68px;
+    --stat-card-padding: 18px;
+    --stat-card-radius: 12px;
+    --stat-card-title-size: 13px;
+    --stat-card-value-size: 22px;
+
+    /* 按钮 */
+    --button-height-sm: 32px;
+    --button-height-base: 36px;
+    --button-height-lg: 44px;
+    --button-padding-sm: 8px 12px;
+    --button-padding-base: 8px 14px;
+    --button-padding-lg: 10px 20px;
+    --button-radius: 10px;
+
+    /* 表格 */
+    --table-header-height: 48px;
+    --table-row-height: 52px;
+    --table-row-height-md: 56px;
+    --table-cell-padding: 14px 20px;
+    --table-radius: 16px;
+
+    /* 页面布局 */
+    --page-padding: 32px;
+    --page-padding-mobile: 16px;
+    --page-header-padding: 32px 32px 0 32px;
+    --sidebar-width: 280px;
+
+    /* ========== 阴影系统 ========== */
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.15);
+
+    /* 特殊阴影 */
+    --shadow-primary: 0 4px 12px rgba(139, 92, 246, 0.15);
+    --shadow-success: 0 4px 12px rgba(5, 150, 105, 0.15);
+    --shadow-error: 0 4px 12px rgba(220, 38, 38, 0.15);
+
+    /* ========== 过渡动画 ========== */
+
+    --transition-fast: 0.15s ease-in;
+    --transition-base: 0.2s ease;
+    --transition-slow: 0.3s ease-out;
+
+    /* ========== Z-index层级 ========== */
+
+    --z-dropdown: 1000;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-notification: 1080;
+}
+
+/* ========== 暗色模式 (预留) ========== */
+@media (prefers-color-scheme: dark) {
+    /* 暗色模式变量可在此处定义 */
+}
+
+/* ========== 响应式断点 ========== */
+
+/* 移动设备 */
+@media (max-width: 768px) {
+    :root {
+        --page-padding: 24px 16px;
+        --page-header-padding: 24px 16px 0 16px;
+        --stat-card-value-size: 20px;
+        --section-gap: 16px;
+    }
+}
+
+/* 平板设备 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    :root {
+        --page-padding: 28px;
+    }
+}
+
+/* 大屏设备 */
+@media (min-width: 1440px) {
+    :root {
+        --page-padding: 40px;
+    }
+}
+
+/* ========== 实用工具类 ========== */
+
+/* 文本截断 */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 多行截断 */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Flexbox 快捷类 */
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn var(--transition-fast);
+}
+
+/* ========== 打印样式 ========== */
+@media print {
+    :root {
+        --shadow-sm: none;
+        --shadow-base: none;
+        --shadow-md: none;
+        --shadow-lg: none;
+        --shadow-xl: none;
+    }
+}

@@ -1,0 +1,70 @@
+# Git 相关
+.git
+.gitignore
+.gitattributes
+
+# Visual Studio 相关
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 构建输出（多阶段构建在容器内完成，无需复制 publish 目录）
+**/bin/
+**/obj/
+**/out/
+publish/
+
+# 测试相关
+tests/
+**/TestResults/
+**/*.trx
+
+# 文档和说明文件
+*.md
+docs/
+
+# Claude Code 相关
+.claude/
+CLAUDE.md
+ARCHITECTURE_IMPROVEMENTS.md
+
+# Playwright 相关
+.playwright-mcp/
+
+# 数据库文件（开发环境）
+*.db
+*.db-shm
+*.db-wal
+
+# 数据目录（运行时挂载）
+data/
+
+# 日志文件
+*.log
+
+# 用户机密和配置
+**/appsettings.Development.json
+**/secrets.json
+**/launchSettings.json
+
+# Node modules（如果有前端构建）
+**/node_modules/
+**/npm-debug.log
+
+# IDE 配置
+**/.idea/
+**/*.swp
+**/*.swo
+**/nul
+
+# Docker 文件
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# 其他临时文件
+**/.DS_Store
+**/Thumbs.db

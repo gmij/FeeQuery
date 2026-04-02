@@ -1,0 +1,394 @@
+@using FeeQuery.Core.Services
+@using FeeQuery.Shared.Models
+@inject CloudAccountService AccountService
+@inject BackupService BackupService
+@inject IMessageService Message
+
+<Form Model="@formModel" LabelColSpan="6" WrapperColSpan="18" OnFinish="HandleSubmit">
+    <FormItem Label="云厂商">
+        <Select @bind-Value="@formModel.ProviderCode"
+                TItem="ProviderOption"
+                TItemValue="string"
+                ValueName="@nameof(ProviderOption.ProviderCode)"
+                LabelName="@nameof(ProviderOption.ProviderName)"
+                DataSource="@availableProviders"
+                Placeholder="请选择云厂商"
+                Disabled="@(!IsNew)"
+                OnSelectedItemChanged="OnProviderChanged">
+        </Select>
+    </FormItem>
+
+    <FormItem Label="账号名称">
+        <Input @bind-Value="@formModel.Name" Placeholder="请输入账号名称（用于标识）" />
+    </FormItem>
+
+    @if (selectedProvider != null)
+    {
+        <Divider>
+            <span>凭证配置</span>
+            @if (!string.IsNullOrEmpty(GetProviderHelpText()))
+            {
+                <Tooltip Title="@GetProviderHelpTextPlain()">
+                    <span class="help-icon">
+                        ⓘ
+                    </span>
+                </Tooltip>
+                <Button Type="@ButtonType.Link"
+                        Size="@ButtonSize.Small"
+                        OnClick="ShowHelpModal"
+                        Class="help-link-button">
+                    查看详情
+                </Button>
+            }
+        </Divider>
+
+        @foreach (var field in selectedProvider.GetRequiredCredentialFields())
+        {
+            var fieldKey = field.Key; // 捕获局部变量避免闭包问题
+            <FormItem Label="@field.DisplayName">
+                @if (field.IsSensitive)
+                {
+                    <InputPassword Value="@GetCredentialValue(fieldKey)"
+                                   ValueChanged="@((string value) => SetCredentialValue(fieldKey, value))"
+                                   Placeholder="@field.Placeholder" />
+                }
+                else
+                {
+                    <Input Value="@GetCredentialValue(fieldKey)"
+                           ValueChanged="@((string value) => SetCredentialValue(fieldKey, value))"
+                           Placeholder="@field.Placeholder" />
+                }
+                @if (!string.IsNullOrEmpty(field.Description))
+                {
+                    <div class="form-description">@field.Description</div>
+                }
+            </FormItem>
+        }
+    }
+
+    <FormItem Label="备注">
+        <TextArea @bind-Value="@formModel.Remark" Placeholder="可选，添加备注信息" Rows="3" />
+    </FormItem>
+
+    <FormItem Label="启用状态">
+        <Switch @bind-Value="@formModel.IsEnabled" CheckedChildren="启用" UnCheckedChildren="禁用" />
+    </FormItem>
+
+    <FormItem WrapperColOffset="6">
+        <Space>
+            <SpaceItem>
+                <Button Type="@ButtonType.Primary" OnClick="TestConnection" Loading="@testing">
+                    <Icon Type="api" Theme="@IconThemeType.Outline"></Icon>
+                    测试连接
+                </Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="@ButtonType.Primary" HtmlType="submit" Loading="@saving">
+                    保存
+                </Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button OnClick="HandleCancel">取消</Button>
+            </SpaceItem>
+        </Space>
+    </FormItem>
+</Form>
+
+<Modal Title="配置说明"
+       @bind-Visible="@helpModalVisible"
+       Footer="null">
+    <div>
+        @((MarkupString)GetProviderHelpText())
+    </div>
+</Modal>
+
+@code {
+    [Parameter] public CloudAccount? Account { get; set; }
+    [Parameter] public bool IsNew { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private AccountFormModel formModel = new();
+    private Dictionary<string, string> credentials = new();
+    private List<ProviderOption> availableProviders = new();
+    private ICloudProvider? selectedProvider;
+    private bool testing = false;
+    private bool saving = false;
+    private bool helpModalVisible = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 加载可用的云厂商并转换为 ProviderOption
+        var providers = AccountService.GetAvailableProviders();
+        availableProviders = providers.Select(p => new ProviderOption
+        {
+            ProviderCode = p.ProviderCode,
+            ProviderName = p.ProviderName,
+            Description = p.Description
+        }).ToList();
+
+        // 初始化表单
+        if (IsNew)
+        {
+            formModel = new AccountFormModel
+            {
+                IsEnabled = true
+            };
+            credentials.Clear();
+        }
+        else if (Account != null)
+        {
+            formModel = new AccountFormModel
+            {
+                Name = Account.Name,
+                ProviderCode = Account.ProviderCode,
+                Remark = Account.Remark,
+                IsEnabled = Account.IsEnabled
+            };
+            credentials = AccountService.GetDecryptedCredentials(Account);
+            selectedProvider = providers.FirstOrDefault(p => p.ProviderCode == Account.ProviderCode);
+
+            // 确保编辑模式下凭证字段完整初始化
+            if (selectedProvider != null)
+            {
+                foreach (var field in selectedProvider.GetRequiredCredentialFields())
+                {
+                    if (!credentials.ContainsKey(field.Key))
+                    {
+                        credentials[field.Key] = "";
+                    }
+                }
+            }
+        }
+
+        await base.OnParametersSetAsync();
+    }
+
+    /// <summary>
+    /// 当用户选择厂商时触发
+    /// </summary>
+    private void OnProviderChanged(ProviderOption option)
+    {
+        if (option == null) return;
+
+        // 更新选中的厂商
+        var providers = AccountService.GetAvailableProviders();
+        selectedProvider = providers.FirstOrDefault(p => p.ProviderCode == option.ProviderCode);
+
+        // 清空并初始化凭证字典
+        credentials.Clear();
+        if (selectedProvider != null)
+        {
+            foreach (var field in selectedProvider.GetRequiredCredentialFields())
+            {
+                credentials[field.Key] = "";
+            }
+        }
+
+        // 触发UI更新
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 获取凭证字段的值
+    /// </summary>
+    private string GetCredentialValue(string key)
+    {
+        return credentials.TryGetValue(key, out var value) ? value : "";
+    }
+
+    /// <summary>
+    /// 设置凭证字段的值
+    /// </summary>
+    private void SetCredentialValue(string key, string value)
+    {
+        credentials[key] = value ?? "";
+    }
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrEmpty(formModel.ProviderCode))
+        {
+            Message.Warning("请先选择云厂商");
+            return;
+        }
+
+        if (credentials.Values.Any(string.IsNullOrEmpty))
+        {
+            Message.Warning("请填写所有必填的凭证字段");
+            return;
+        }
+
+        testing = true;
+        try
+        {
+            var (success, message) = await AccountService.TestConnectionAsync(
+                formModel.ProviderCode,
+                credentials);
+
+            if (success)
+            {
+                Message.Success(message);
+            }
+            else
+            {
+                Message.Error(message);
+            }
+        }
+        finally
+        {
+            testing = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrEmpty(formModel.Name))
+        {
+            Message.Warning("请输入账号名称");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(formModel.ProviderCode))
+        {
+            Message.Warning("请选择云厂商");
+            return;
+        }
+
+        if (credentials.Values.Any(string.IsNullOrEmpty))
+        {
+            Message.Warning("请填写所有必填的凭证字段");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            if (IsNew)
+            {
+                // 创建新账号
+                var account = new CloudAccount
+                {
+                    Name = formModel.Name,
+                    ProviderCode = formModel.ProviderCode,
+                    ProviderName = selectedProvider?.ProviderName ?? formModel.ProviderCode,
+                    Remark = formModel.Remark,
+                    IsEnabled = formModel.IsEnabled
+                };
+
+                await AccountService.AddAccountAsync(account, credentials);
+            }
+            else if (Account != null)
+            {
+                // 更新账号
+                Account.Name = formModel.Name;
+                Account.Remark = formModel.Remark;
+                Account.IsEnabled = formModel.IsEnabled;
+
+                await AccountService.UpdateAccountAsync(Account, credentials);
+            }
+
+            await OnSuccess.InvokeAsync();
+            var remark = IsNew ? $"新建账号「{formModel.Name}」" : $"更新账号「{formModel.Name}」";
+            await BackupService.CreateAutoConfigBackupAsync(remark);
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"保存失败: {ex.Message}");
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    /// <summary>
+    /// 显示配置帮助对话框
+    /// </summary>
+    private void ShowHelpModal()
+    {
+        helpModalVisible = true;
+    }
+
+    /// <summary>
+    /// 获取厂商特定的配置帮助文本（纯文本版本，用于Tooltip）
+    /// </summary>
+    private string GetProviderHelpTextPlain()
+    {
+        return formModel.ProviderCode switch
+        {
+            "huawei" => "点击查看华为云权限配置说明",
+            "volcano" => "点击查看火山引擎凭证配置说明",
+            "siliconflow" => "点击查看硅基流动会话令牌获取说明",
+            "wanjie" => "点击查看万界方舟登录凭证说明",
+            _ => "查看配置说明"
+        };
+    }
+
+    /// <summary>
+    /// 获取厂商特定的配置帮助文本（HTML版本，用于Modal）
+    /// </summary>
+    private string GetProviderHelpText()
+    {
+        return formModel.ProviderCode switch
+        {
+            "huawei" => @"
+                <strong>华为云权限配置说明：</strong>
+                <ul class='help-list'>
+                    <li>必须通过<strong>用户组</strong>授予权限，不能直接给IAM用户授权</li>
+                    <li>创建用户组并添加策略：<code>BSS Administrator</code> 或 <code>BSS FullAccess</code></li>
+                    <li>或者创建自定义策略，包含权限：<code>bss:balance:view</code></li>
+                    <li>将IAM用户加入该用户组，权限才会生效</li>
+                    <li>详细步骤：IAM控制台 → 用户组 → 创建用户组 → 授权 → 添加用户</li>
+                </ul>
+            ",
+            "volcano" => @"
+                <strong>火山引擎凭证配置说明：</strong>
+                <ul class='help-list'>
+                    <li>在火山引擎控制台创建 AccessKey</li>
+                    <li>确保密钥对拥有 <code>BillingCenterBillReadOnlyAccess</code> 权限策略</li>
+                    <li>访问<a href='https://console.volcengine.com/iam/keymanage/' target='_blank'>密钥管理</a>页面创建和管理密钥</li>
+                    <li>详细文档参考：<a href='https://www.volcengine.com/docs/6269/1165275' target='_blank'>火山引擎费用中心API</a></li>
+                </ul>
+            ",
+            "siliconflow" => @"
+                <strong>硅基流动会话令牌获取说明：</strong>
+                <ul class='help-list'>
+                    <li><strong>获取账号ID：</strong>登录 <a href='https://cloud.siliconflow.cn' target='_blank'>cloud.siliconflow.cn</a>，点击右上角头像 → 账号设置，复制账号ID（纯数字）</li>
+                    <li><strong>获取会话令牌：</strong>
+                        <ol>
+                            <li>登录硅基流动控制台</li>
+                            <li>按 F12 打开浏览器开发者工具</li>
+                            <li>切换到 <code>Application</code>（应用）选项卡</li>
+                            <li>展开左侧 <code>Cookies</code> → <code>https://cloud.siliconflow.cn</code></li>
+                            <li>找到名为 <code>__SF_auth.session-token</code> 的Cookie，复制其值</li>
+                        </ol>
+                    </li>
+                    <li><strong>⚠ 重要提示：</strong>会话令牌会定期过期（通常数天至数周），过期后余额查询将失败。请及时重新登录并更新令牌。</li>
+                </ul>
+            ",
+            "wanjie" => @"
+                <strong>万界方舟登录凭证说明：</strong>
+                <ul class='help-list'>
+                    <li>使用在 <a href='https://fangzhou.wanjiedata.com' target='_blank'>fangzhou.wanjiedata.com</a> 注册的手机号和登录密码</li>
+                    <li>每次查询余额时系统会自动使用凭证登录，无需手动维护令牌</li>
+                    <li>凭证仅用于查询余额，不会进行任何消费操作</li>
+                </ul>
+            ",
+            _ => ""
+        };
+    }
+
+    public class AccountFormModel
+    {
+        public string Name { get; set; } = "";
+        public string ProviderCode { get; set; } = "";
+        public string? Remark { get; set; }
+        public bool IsEnabled { get; set; } = true;
+    }
+}

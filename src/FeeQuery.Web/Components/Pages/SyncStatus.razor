@@ -1,0 +1,383 @@
+@page "/sync-status"
+@rendermode InteractiveServer
+@using FeeQuery.Core.Services
+@using FeeQuery.Shared.Models
+@using FeeQuery.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject IMessageService Message
+
+
+<div class="sync-status-page">
+<PageHeader Class="ant-page-header">
+    <PageHeaderTitle>
+        <div class="page-header-title">同步状态监控</div>
+    </PageHeaderTitle>
+    <PageHeaderSubtitle>
+        <div class="page-header-subtitle">实时监控各云账号的费用数据同步状态</div>
+    </PageHeaderSubtitle>
+</PageHeader>
+
+<div class="sync-status-content">
+
+@* 统计卡片 *@
+<Row Gutter="16" Class="stats-row">
+    <AntDesign.Col Span="8">
+        <Card Bordered="false" Class="stat-card stat-card-success">
+            <Statistic Title="同步成功" Value="@recentSuccessCount" />
+        </Card>
+    </AntDesign.Col>
+    <AntDesign.Col Span="8">
+        <Card Bordered="false" Class="stat-card stat-card-error">
+            <Statistic Title="同步失败" Value="@recentFailureCount" />
+        </Card>
+    </AntDesign.Col>
+    <AntDesign.Col Span="8">
+        <Card Bordered="false" Class="stat-card stat-card-warning">
+            <Statistic Title="同步中" Value="@syncingCount" />
+        </Card>
+    </AntDesign.Col>
+</Row>
+
+@* 同步任务列表 *@
+<div class="table-section">
+    <div class="table-header">
+        <Title Level="4">同步任务列表</Title>
+        <Button Type="@ButtonType.Primary" Icon="reload" OnClick="LoadData">
+            刷新
+        </Button>
+    </div>
+
+    <Table TItem="AccountSyncStatus"
+           DataSource="@syncStatuses"
+           Loading="@loading"
+           Bordered>
+            <Column Title="账号名称" TData="string">
+                <Space>
+                    <SpaceItem>@context.AccountName</SpaceItem>
+                    <SpaceItem>
+                        <Tag Color="@("blue")">@context.ProviderName</Tag>
+                    </SpaceItem>
+                </Space>
+            </Column>
+            <Column Title="同步状态" TData="bool">
+                @if (context.IsEnabled)
+                {
+                    <div class="status-badge status-badge-success">已启用</div>
+                }
+                else
+                {
+                    <div class="status-badge status-badge-info">已禁用</div>
+                }
+            </Column>
+            <Column Title="同步间隔" TData="int">
+                @context.IntervalMinutes 分钟
+            </Column>
+            <Column Title="最后同步" TData="DateTime?">
+                @if (context.LastSyncAt.HasValue)
+                {
+                    <Space Direction="@SpaceDirection.Vertical" Size="@("0")">
+                        <SpaceItem>
+                            <div>@context.LastSyncAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Space Size="@("small")">
+                                @if (context.LastSyncStatus == "Success")
+                                {
+                                    <SpaceItem>
+                                        <Tag Color="@("success")">同步成功</Tag>
+                                    </SpaceItem>
+                                }
+                                else if (context.LastSyncStatus == "Failed")
+                                {
+                                    <SpaceItem>
+                                        <Tag Color="@("error")">同步失败</Tag>
+                                    </SpaceItem>
+                                    @if (!string.IsNullOrEmpty(context.LastErrorMessage))
+                                    {
+                                        <SpaceItem>
+                                            <Tooltip Title="@context.LastErrorMessage">
+                                                <Icon Type="exclamation-circle" Theme="@IconThemeType.Fill" Style="color: #ff4d4f; font-size: 16px; cursor: help;" />
+                                            </Tooltip>
+                                        </SpaceItem>
+                                    }
+                                }
+                                else if (context.LastSyncStatus == "Running")
+                                {
+                                    <SpaceItem>
+                                        <Tag Color="@("warning")">同步中</Tag>
+                                    </SpaceItem>
+                                }
+                                else
+                                {
+                                    <SpaceItem>
+                                        <Tag>未知</Tag>
+                                    </SpaceItem>
+                                }
+                            </Space>
+                        </SpaceItem>
+                    </Space>
+                }
+                else
+                {
+                    <span><Text Type="@TextElementType.Secondary">从未同步</Text></span>
+                }
+            </Column>
+            <Column Title="下次同步" TData="DateTime?">
+                @if (context.NextSyncAt.HasValue && context.IsEnabled)
+                {
+                    var timeUntilSync = context.NextSyncAt.Value - DateTime.UtcNow;
+                    <Space Direction="@SpaceDirection.Vertical" Size="@("0")">
+                        <SpaceItem>
+                            <span><Text>@context.NextSyncAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</Text></span>
+                        </SpaceItem>
+                        <SpaceItem>
+                            @if (timeUntilSync.TotalMinutes > 0)
+                            {
+                                <span>
+                                    <Text Type="@TextElementType.Secondary" Class="sync-time-hint">
+                                        @(timeUntilSync.TotalMinutes < 60
+                                            ? $"{(int)timeUntilSync.TotalMinutes} 分钟后"
+                                            : $"{timeUntilSync.TotalHours:F1} 小时后")
+                                    </Text>
+                                </span>
+                            }
+                            else
+                            {
+                                <span><Text Class="sync-time-warning">待执行</Text></span>
+                            }
+                        </SpaceItem>
+                    </Space>
+                }
+                else
+                {
+                    <span><Text Type="@TextElementType.Secondary">-</Text></span>
+                }
+            </Column>
+            <Column Title="当前余额" TData="decimal?">
+                @if (context.CurrentBalance.HasValue)
+                {
+                    <Space Direction="@SpaceDirection.Vertical" Size="@("0")">
+                        <SpaceItem>
+                            <span><Text Strong Class="balance-amount">¥ @context.CurrentBalance.Value.ToString("N2")</Text></span>
+                        </SpaceItem>
+                        @if (context.LastSyncDurationMs.HasValue)
+                        {
+                            <SpaceItem>
+                                <span>
+                                    <Text Type="@TextElementType.Secondary" Class="duration-hint">
+                                        耗时: @context.LastSyncDurationMs.Value ms
+                                    </Text>
+                                </span>
+                            </SpaceItem>
+                        }
+                    </Space>
+                }
+                else
+                {
+                    <span><Text Type="@TextElementType.Secondary">-</Text></span>
+                }
+            </Column>
+            <ActionColumn Title="操作">
+                <a class="action-link" @onclick="() => ShowHistory(context)">查看历史</a>
+            </ActionColumn>
+        </Table>
+</div>
+</div>
+</div>
+
+<Drawer Width="720"
+        Closable="true"
+        @bind-Visible="@drawerVisible"
+        Title="@drawerTitle"
+        Placement="@DrawerPlacement.Right">
+    @if (selectedStatus != null && selectedStatus.RecentHistories != null)
+    {
+        <div class="drawer-content">
+            <Title Level="4">最近20次同步历史</Title>
+            <Timeline>
+                @foreach (var history in selectedStatus.RecentHistories)
+                {
+                    <TimelineItem Color="@(history.Status == "Success" ? "green" : "red")">
+                        <Space Direction="@SpaceDirection.Vertical" Size="@("0")">
+                            <SpaceItem>
+                                <Space>
+                                    <SpaceItem>
+                                        <Text Strong>@history.RecordedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</Text>
+                                    </SpaceItem>
+                                    <SpaceItem>
+                                        @if (history.Status == "Success")
+                                        {
+                                            <Tag Color="@("success")" Icon="check-circle">成功</Tag>
+                                        }
+                                        else
+                                        {
+                                            <Tag Color="@("error")" Icon="close-circle">失败</Tag>
+                                        }
+                                    </SpaceItem>
+                                    <SpaceItem>
+                                        @if (history.Source == "manual")
+                                        {
+                                            <Tag Color="@("blue")">手动</Tag>
+                                        }
+                                        else if (history.Source == "scheduled")
+                                        {
+                                            <Tag Color="@("cyan")">定时</Tag>
+                                        }
+                                        else if (history.Source == "initial")
+                                        {
+                                            <Tag Color="@("purple")">初始化</Tag>
+                                        }
+                                    </SpaceItem>
+                                </Space>
+                            </SpaceItem>
+                            @if (history.Status == "Success")
+                            {
+                                <SpaceItem>
+                                    <Text>余额: ¥ @history.AvailableBalance.ToString("N2")</Text>
+                                </SpaceItem>
+                            }
+                            else
+                            {
+                                <SpaceItem>
+                                    <Text Type="@TextElementType.Danger">错误: @history.ErrorMessage</Text>
+                                </SpaceItem>
+                            }
+                            @if (history.SyncDurationMs.HasValue)
+                            {
+                                <SpaceItem>
+                                    <Text Type="@TextElementType.Secondary" Class="duration-hint">
+                                        耗时: @history.SyncDurationMs.Value ms
+                                    </Text>
+                                </SpaceItem>
+                            }
+                        </Space>
+                    </TimelineItem>
+                }
+            </Timeline>
+        </div>
+    }
+</Drawer>
+
+@code {
+    private List<AccountSyncStatus> syncStatuses = new();
+    private bool loading = false;
+    private int totalAccounts = 0;
+    private int enabledSyncAccounts = 0;
+    private int recentSuccessCount = 0;
+    private int recentFailureCount = 0;
+    private int syncingCount = 0;
+    private bool drawerVisible = false;
+    private string drawerTitle = "";
+    private AccountSyncStatus? selectedStatus = null;
+
+    public class AccountSyncStatus
+    {
+        public int AccountId { get; set; }
+        public string AccountName { get; set; } = "";
+        public string ProviderName { get; set; } = "";
+        public bool IsEnabled { get; set; }
+        public int IntervalMinutes { get; set; }
+        public DateTime? LastSyncAt { get; set; }
+        public DateTime? NextSyncAt { get; set; }
+        public string? LastSyncStatus { get; set; }
+        public decimal? CurrentBalance { get; set; }
+        public int? LastSyncDurationMs { get; set; }
+        public List<BalanceHistory>? RecentHistories { get; set; }
+        public string? LastErrorMessage { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSyncStatuses();
+    }
+
+    private async Task LoadSyncStatuses()
+    {
+        loading = true;
+        try
+        {
+            var accounts = await DbContext.CloudAccounts
+                .Where(a => a.IsEnabled)
+                .ToListAsync();
+
+            totalAccounts = accounts.Count;
+
+            var syncConfigs = await DbContext.SyncConfigurations
+                .Where(c => c.CloudAccountId != null)
+                .ToListAsync();
+
+            var globalConfig = await DbContext.SyncConfigurations
+                .FirstOrDefaultAsync(c => c.CloudAccountId == null);
+
+            syncStatuses.Clear();
+
+            foreach (var account in accounts)
+            {
+                var config = syncConfigs.FirstOrDefault(c => c.CloudAccountId == account.Id) ?? globalConfig;
+
+                var recentHistories = await DbContext.BalanceHistories
+                    .Where(h => h.CloudAccountId == account.Id)
+                    .OrderByDescending(h => h.RecordedAt)
+                    .Take(20)
+                    .ToListAsync();
+
+                var latestHistory = recentHistories.FirstOrDefault();
+
+                var status = new AccountSyncStatus
+                {
+                    AccountId = account.Id,
+                    AccountName = account.Name,
+                    ProviderName = account.ProviderName,
+                    IsEnabled = config?.IsEnabled ?? false,
+                    IntervalMinutes = config?.IntervalMinutes ?? 60,
+                    LastSyncAt = config?.LastSyncAt,
+                    NextSyncAt = config?.NextSyncAt,
+                    LastSyncStatus = latestHistory?.Status,
+                    CurrentBalance = latestHistory?.Status == "Success" ? latestHistory.AvailableBalance : null,
+                    LastSyncDurationMs = latestHistory?.SyncDurationMs,
+                    RecentHistories = recentHistories,
+                    LastErrorMessage = latestHistory?.Status == "Failed" ? latestHistory.ErrorMessage : null
+                };
+
+                syncStatuses.Add(status);
+
+                if (config?.IsEnabled == true)
+                {
+                    enabledSyncAccounts++;
+                }
+            }
+
+            // 统计最近的成功和失败次数
+            var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+            recentSuccessCount = await DbContext.BalanceHistories
+                .Where(h => h.RecordedAt >= oneHourAgo && h.Status == "Success")
+                .CountAsync();
+
+            recentFailureCount = await DbContext.BalanceHistories
+                .Where(h => h.RecordedAt >= oneHourAgo && h.Status == "Failed")
+                .CountAsync();
+
+            // 统计同步中的数量
+            syncingCount = await DbContext.BalanceHistories
+                .Where(h => h.RecordedAt >= oneHourAgo && h.Status == "Running")
+                .CountAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        await LoadSyncStatuses();
+    }
+
+    private void ShowHistory(AccountSyncStatus status)
+    {
+        selectedStatus = status;
+        drawerTitle = $"{status.AccountName} - 同步历史";
+        drawerVisible = true;
+    }
+}

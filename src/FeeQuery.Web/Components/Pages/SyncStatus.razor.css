@@ -1,0 +1,294 @@
+/* 同步状态监控页面样式 */
+
+/* 页面容器 */
+.sync-status-page {
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    width: 100%;
+    animation: fadeIn 0.15s ease-in;
+}
+
+.sync-status-content {
+    padding: 32px;
+}
+
+/* 页面头部 */
+.sync-status-page ::deep .ant-page-header {
+    padding: 32px 32px 0 32px;
+    background: transparent;
+}
+
+.sync-status-page ::deep .page-header-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0;
+}
+
+.sync-status-page ::deep .page-header-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #71717A;
+    margin-top: 6px;
+}
+
+/* 统计卡片行 */
+.sync-status-page ::deep .stats-row {
+    margin-bottom: 24px;
+}
+
+/* 统计卡片 */
+.sync-status-page ::deep .stat-card {
+    border: none;
+    border-radius: 12px;
+    height: 68px;
+}
+
+.sync-status-page ::deep .stat-card .ant-card-body {
+    padding: 18px !important;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.sync-status-page ::deep .stat-card-success {
+    background-color: #D1FAE5;
+}
+
+.sync-status-page ::deep .stat-card-error {
+    background-color: #FEE2E2;
+}
+
+.sync-status-page ::deep .stat-card-warning {
+    background-color: #FEF3C7;
+}
+
+.sync-status-page ::deep .stat-card-success .ant-statistic-title {
+    color: #059669;
+}
+
+.sync-status-page ::deep .stat-card-error .ant-statistic-title {
+    color: #DC2626;
+}
+
+.sync-status-page ::deep .stat-card-warning .ant-statistic-title {
+    color: #F59E0B;
+}
+
+.sync-status-page ::deep .stat-card .ant-statistic {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.sync-status-page ::deep .stat-card .ant-statistic-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.sync-status-page ::deep .stat-card-success .ant-statistic-content {
+    color: #059669;
+}
+
+.sync-status-page ::deep .stat-card-error .ant-statistic-content {
+    color: #DC2626;
+}
+
+.sync-status-page ::deep .stat-card-warning .ant-statistic-content {
+    color: #F59E0B;
+}
+
+.sync-status-page ::deep .stat-card .ant-statistic-content {
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: right;
+}
+
+/* 表格区域 */
+.sync-status-page ::deep .table-section {
+    width: 100%;
+    margin-top: 24px;
+}
+
+.sync-status-page ::deep .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sync-status-page ::deep .table-header .ant-typography {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+    margin: 0;
+}
+
+.sync-status-page ::deep .table-header .ant-btn-primary {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 表格样式 */
+.sync-status-page ::deep .ant-table {
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.sync-status-page ::deep .ant-table-thead > tr > th {
+    background-color: #F4F4F5;
+    border-bottom: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #71717A;
+    padding: 16px;
+}
+
+.sync-status-page ::deep .ant-table-tbody > tr > td {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #18181B;
+    padding: 16px;
+    border-bottom: 1px solid #E4E4E7;
+}
+
+.sync-status-page ::deep .ant-table-tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+/* 状态徽章 */
+.sync-status-page ::deep .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.sync-status-page ::deep .status-badge-success {
+    background-color: #D1FAE5;
+    color: #059669;
+}
+
+.sync-status-page ::deep .status-badge-info {
+    background-color: #DBEAFE;
+    color: #3B82F6;
+}
+
+/* 余额金额 */
+.sync-status-page ::deep .balance-amount {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #18181B;
+}
+
+/* 同步时间提示 */
+.sync-status-page ::deep .sync-time-hint {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #71717A;
+}
+
+.sync-status-page ::deep .sync-time-warning {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #F59E0B;
+    font-weight: 500;
+}
+
+/* 耗时提示 */
+.sync-status-page ::deep .duration-hint {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #71717A;
+}
+
+/* 操作链接 */
+.sync-status-page ::deep .action-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8B5CF6;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.sync-status-page ::deep .action-link:hover {
+    color: #7C3AED;
+    text-decoration: underline;
+}
+
+/* 标签样式 */
+.sync-status-page ::deep .ant-tag {
+    border: none;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Drawer 内容 */
+.sync-status-page ::deep .drawer-content {
+    padding: 24px 0;
+}
+
+.sync-status-page ::deep .drawer-content .ant-typography {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+    margin-bottom: 24px;
+}
+
+/* Timeline 样式 */
+.sync-status-page ::deep .ant-timeline {
+    font-family: 'Inter', sans-serif;
+}
+
+.sync-status-page ::deep .ant-timeline-item-content {
+    margin-left: 32px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .sync-status-content {
+        padding: 24px 16px;
+    }
+
+    .sync-status-page ::deep .ant-page-header {
+        padding: 24px 16px 0 16px;
+    }
+
+    .sync-status-page ::deep .page-header-title {
+        font-size: 24px;
+    }
+
+    .sync-status-page ::deep .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .sync-status-page ::deep .stat-card .ant-statistic-content {
+        font-size: 28px;
+    }
+}

@@ -1,0 +1,381 @@
+/* 余额看板页面样式 */
+
+/* 页面容器 */
+.balance-dashboard {
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    width: 100%;
+    animation: fadeIn 0.15s ease-in;
+}
+
+.balance-dashboard-content {
+    padding: 32px;
+}
+
+/* 页面头部 */
+.balance-dashboard ::deep .ant-page-header {
+    padding: 32px 32px 0 32px;
+    background: transparent;
+}
+
+.balance-dashboard ::deep .page-header-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0;
+}
+
+.balance-dashboard ::deep .page-header-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #71717A;
+    margin-top: 6px;
+}
+
+/* 刷新按钮 */
+.balance-dashboard ::deep .refresh-button {
+    height: 36px;
+    min-width: 110px;
+    padding: 8px 14px;
+    background-color: #8B5CF6 !important;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.balance-dashboard ::deep .refresh-button:hover {
+    background-color: #7C3AED !important;
+}
+
+.balance-dashboard ::deep .refresh-button .anticon {
+    font-size: 14px;
+}
+
+/* 统计卡片 */
+.balance-dashboard ::deep .stats-row {
+    margin-bottom: 24px;
+}
+
+.balance-dashboard ::deep .stat-card {
+    background-color: #F4F4F5;
+    border: none;
+    border-radius: 12px;
+    height: 68px;
+}
+
+.balance-dashboard ::deep .stat-card .ant-card-body {
+    padding: 18px !important;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.balance-dashboard ::deep .stat-card-primary {
+    background-color: #8B5CF6;
+}
+
+.balance-dashboard ::deep .stat-card .ant-statistic {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.balance-dashboard ::deep .stat-card .ant-statistic-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #71717A;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.balance-dashboard ::deep .stat-card-primary .ant-statistic-title {
+    color: #E9D5FF;
+}
+
+.balance-dashboard ::deep .stat-card .ant-statistic-content {
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #18181B;
+    text-align: right;
+}
+
+.balance-dashboard ::deep .stat-card-primary .ant-statistic-content {
+    color: #FFFFFF;
+}
+
+/* 余额明细表格 */
+.balance-dashboard ::deep .section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+    margin-bottom: 16px;
+}
+
+.balance-dashboard ::deep .balance-table-card {
+    background-color: #FFFFFF;
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.balance-dashboard ::deep .balance-table-card .ant-card-body {
+    padding: 0 !important;
+}
+
+/* 表格样式 */
+.balance-dashboard ::deep .ant-table {
+    border-radius: 16px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th {
+    background-color: #F4F4F5;
+    border-bottom: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #71717A;
+    padding: 14px 20px;
+    height: 48px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:first-child {
+    border-top-left-radius: 16px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:last-child {
+    border-top-right-radius: 16px;
+}
+
+.balance-dashboard ::deep .ant-table-tbody > tr > td {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #18181B;
+    padding: 14px 20px;
+    border-bottom: 1px solid #E4E4E7;
+    height: 52px;
+}
+
+.balance-dashboard ::deep .ant-table-tbody > tr:last-child > td:first-child {
+    border-bottom-left-radius: 16px;
+}
+
+.balance-dashboard ::deep .ant-table-tbody > tr:last-child > td:last-child {
+    border-bottom-right-radius: 16px;
+}
+
+.balance-dashboard ::deep .ant-table-tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+/* 错误行样式 */
+.balance-dashboard ::deep .row-error > td {
+    background-color: #FEF2F2 !important;
+}
+
+/* 厂商信息列 */
+.balance-dashboard ::deep .provider-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.balance-dashboard ::deep .provider-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #8B5CF6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.balance-dashboard ::deep .provider-avatar .anticon {
+    font-size: 20px;
+    color: #FFFFFF;
+}
+
+.balance-dashboard ::deep .provider-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.balance-dashboard ::deep .provider-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #18181B;
+}
+
+.balance-dashboard ::deep .provider-id {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #71717A;
+}
+
+/* 状态标签 */
+.balance-dashboard ::deep .ant-tag {
+    border: none;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.balance-dashboard ::deep .ant-tag-success {
+    background-color: #D1FAE5;
+    color: #059669;
+}
+
+.balance-dashboard ::deep .ant-tag-error {
+    background-color: #FEE2E2;
+    color: #DC2626;
+}
+
+/* 错误信息图标 */
+.balance-dashboard ::deep .error-info-avatar {
+    width: 24px;
+    height: 24px;
+    background-color: #DC2626;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.balance-dashboard ::deep .error-info-avatar .anticon {
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+/* 余额显示 */
+.balance-dashboard ::deep .balance-success {
+    color: #059669 !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.balance-dashboard ::deep .balance-error {
+    color: #DC2626 !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* 表格列宽度固定，避免内容变化时表格抖动 */
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(1) {
+    width: 220px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(2) {
+    width: 100px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(3) {
+    width: 120px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(4) {
+    width: 150px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(5) {
+    width: 150px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(6) {
+    width: 150px;
+}
+
+.balance-dashboard ::deep .ant-table-thead > tr > th:nth-child(7) {
+    width: 100px;
+}
+
+/* 操作按钮 */
+.balance-dashboard ::deep .ant-btn-sm {
+    height: 32px;
+    width: 68px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+}
+
+.balance-dashboard ::deep .ant-btn-sm .anticon {
+    font-size: 12px;
+}
+
+/* 修复加载状态下的spinner定位，避免按钮宽度变化 */
+.balance-dashboard ::deep .ant-btn-sm .ant-btn-loading-icon {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.balance-dashboard ::deep .ant-btn-sm.ant-btn-loading .ant-btn-loading-icon + span {
+    opacity: 0;
+}
+
+/* 加载状态 */
+.balance-dashboard ::deep .loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+/* 空状态 */
+.balance-dashboard ::deep .ant-empty {
+    padding: 40px;
+}
+
+.balance-dashboard ::deep .ant-empty-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #71717A;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .balance-dashboard-content {
+        padding: 24px 16px;
+    }
+
+    .balance-dashboard ::deep .ant-page-header {
+        padding: 24px 16px 0 16px;
+    }
+
+    .balance-dashboard ::deep .page-header-title {
+        font-size: 24px;
+    }
+
+    .balance-dashboard ::deep .stat-card .ant-statistic-content {
+        font-size: 28px;
+    }
+}

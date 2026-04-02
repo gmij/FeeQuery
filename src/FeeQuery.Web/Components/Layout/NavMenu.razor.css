@@ -1,0 +1,112 @@
+/* 导航菜单样式 */
+
+/* 侧边栏容器 */
+.nav-menu-container {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    height: 100%;
+    width: 100%;
+    animation: fadeIn 0.15s ease-in;
+}
+
+/* Logo */
+.nav-menu-logo {
+    color: #18181B;
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+/* 菜单项样式 */
+.nav-menu ::deep .ant-menu {
+    background: transparent;
+    border-right: none;
+}
+
+.nav-menu ::deep .ant-menu-item {
+    border-radius: 12px;
+    height: 44px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px !important;
+    gap: 12px;
+    color: #71717A !important;
+    transition: all 0.2s ease;
+}
+
+.nav-menu ::deep .ant-menu-item .anticon {
+    font-size: 20px;
+    color: #71717A !important;
+}
+
+.nav-menu ::deep .ant-menu-item span {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #71717A !important;
+}
+
+/* 菜单项悬停状态 */
+.nav-menu ::deep .ant-menu-item:hover {
+    background-color: rgba(139, 92, 246, 0.1);
+    color: #8B5CF6 !important;
+}
+
+.nav-menu ::deep .ant-menu-item:hover .anticon {
+    color: #8B5CF6 !important;
+}
+
+.nav-menu ::deep .ant-menu-item:hover span {
+    color: #8B5CF6 !important;
+}
+
+/* 菜单项选中状态 */
+.nav-menu ::deep .ant-menu-item-selected {
+    background-color: #8B5CF6 !important;
+    color: #FFFFFF !important;
+}
+
+.nav-menu ::deep .ant-menu-item-selected .anticon {
+    color: #FFFFFF !important;
+}
+
+.nav-menu ::deep .ant-menu-item-selected span {
+    color: #FFFFFF !important;
+}
+
+.nav-menu ::deep .ant-menu-item-selected:hover {
+    background-color: #7C3AED !important;
+}
+
+/* 移除选中时的背景色 */
+.nav-menu ::deep .ant-menu-item::after {
+    display: none;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .nav-menu-container {
+        padding: 16px;
+        gap: 24px;
+    }
+
+    .nav-menu-logo {
+        font-size: 20px;
+    }
+
+    .nav-menu ::deep .ant-menu-item {
+        height: 40px;
+        padding: 10px 14px !important;
+    }
+
+    .nav-menu ::deep .ant-menu-item .anticon {
+        font-size: 18px;
+    }
+
+    .nav-menu ::deep .ant-menu-item span {
+        font-size: 13px;
+    }
+}

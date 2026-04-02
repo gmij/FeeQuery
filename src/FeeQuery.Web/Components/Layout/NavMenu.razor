@@ -1,0 +1,74 @@
+@using AntDesign
+
+<link href="/css/nav-menu.css" rel="stylesheet" />
+
+<div class="nav-menu-container">
+    <div class="nav-menu-logo">
+        FeeQuery
+    </div>
+
+    <div class="nav-menu">
+        <Menu Mode="@MenuMode.Inline"
+              DefaultSelectedKeys="@(new[]{ GetCurrentRoute() })">
+
+            <MenuItem Key="/" RouterLink="/">
+                <Icon Type="layout" Theme="@IconThemeType.Outline" />
+                <span>首页</span>
+            </MenuItem>
+
+            <MenuItem Key="/accounts" RouterLink="/accounts">
+                <Icon Type="team" Theme="@IconThemeType.Outline" />
+                <span>账号管理</span>
+            </MenuItem>
+
+            <MenuItem Key="/balance-dashboard" RouterLink="/balance-dashboard">
+                <Icon Type="wallet" Theme="@IconThemeType.Outline" />
+                <span>余额看板</span>
+            </MenuItem>
+
+            <MenuItem Key="/balance-alerts" RouterLink="/balance-alerts">
+                <Icon Type="bell" Theme="@IconThemeType.Outline" />
+                <span>预警配置</span>
+            </MenuItem>
+
+            <MenuItem Key="/sync-status" RouterLink="/sync-status">
+                <Icon Type="sync" Theme="@IconThemeType.Outline" />
+                <span>同步状态</span>
+            </MenuItem>
+
+            <MenuItem Key="/sync-config" RouterLink="/sync-config">
+                <Icon Type="setting" Theme="@IconThemeType.Outline" />
+                <span>同步配置</span>
+            </MenuItem>
+
+            <MenuItem Key="/notification-settings" RouterLink="/notification-settings">
+                <Icon Type="notification" Theme="@IconThemeType.Outline" />
+                <span>通知配置</span>
+            </MenuItem>
+
+            <MenuItem Key="/backup" RouterLink="/backup">
+                <Icon Type="cloud-upload" Theme="@IconThemeType.Outline" />
+                <span>备份管理</span>
+            </MenuItem>
+        </Menu>
+    </div>
+</div>
+
+@code {
+    [Inject] private NavigationManager? NavigationManager { get; set; }
+
+    private string GetCurrentRoute()
+    {
+        if (NavigationManager == null) return "/";
+
+        var uri = NavigationManager.Uri;
+        var baseUri = NavigationManager.BaseUri;
+        var relativePath = uri.Substring(baseUri.Length - 1);
+
+        // Remove query string and fragment
+        var pathOnly = relativePath.Split('?', '#')[0];
+
+        // Return the path, defaulting to "/" if empty
+        return string.IsNullOrEmpty(pathOnly) || pathOnly == "/" ? "/" : pathOnly;
+    }
+}

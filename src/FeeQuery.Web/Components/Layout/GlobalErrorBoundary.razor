@@ -1,0 +1,54 @@
+@inject IMessageService MessageService
+
+<ErrorBoundary @ref="errorBoundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent Context="ex">
+        <div style="padding: 20px; background: #fff1f0; border: 1px solid #ffa39e; border-radius: 4px; margin: 20px;">
+            <h3 style="color: #cf1322;">
+                <Icon Type="exclamation-circle" Theme="@IconThemeType.TwoTone" Style="margin-right: 8px;" />
+                页面出现错误
+            </h3>
+            <p style="color: #000; margin-top: 10px;">
+                <strong>错误信息：</strong> @ex.Message
+            </p>
+            <p style="color: #666; margin-top: 10px;">
+                系统已记录此错误，请尝试刷新页面或联系管理员。
+            </p>
+            <Space Style="margin-top: 15px;">
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" OnClick="Recover">
+                        <Icon Type="reload" /> 恢复页面
+                    </Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button OnClick="@(() => Navigation.NavigateTo("/", true))">
+                        <Icon Type="home" /> 返回首页
+                    </Button>
+                </SpaceItem>
+            </Space>
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
+
+    private void Recover()
+    {
+        errorBoundary?.Recover();
+        MessageService.Success("页面已恢复");
+    }
+}

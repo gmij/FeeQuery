@@ -1,0 +1,40 @@
+# FeeQuery Docker Compose 配置
+# 使用前请先运行: dotnet publish src/FeeQuery.Web -c Release -o ./publish
+# 或者运行构建脚本: build-docker.bat (Windows) 或 ./build-docker.sh (Linux/Mac)
+
+version: '3.8'
+
+services:
+  feequery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: feequery:latest
+    container_name: feequery
+    ports:
+      - "8080:80"  # 映射主机端口 8080 到容器端口 80
+    volumes:
+      # 持久化 SQLite 数据库到本地目录
+      - ./data:/app/data
+      # 可选：挂载配置文件（如需自定义配置）
+      # - ./appsettings.Production.json:/app/appsettings.Production.json:ro
+    environment:
+      # 数据库配置
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/feequery.db
+      - DatabaseProvider=Sqlite
+
+      # ASP.NET Core 配置
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+
+      # 日志级别
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+
+      # 时区设置
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    # 健康检查已移除，因为 aspnet 镜像默认不包含 curl
+    # 如需健康检查，请在 Dockerfile 中安装 curl：
+    # RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+  

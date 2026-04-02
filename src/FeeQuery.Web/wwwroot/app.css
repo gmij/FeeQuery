@@ -1,0 +1,305 @@
+/* 导入 Inter 字体 - 本地版本 */
+@import url('/fonts/inter-local.css');
+
+/* 全局基础样式 */
+html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #FFFFFF;
+}
+
+/* FeeQuery 自定义主题 - CSS变量 */
+:root {
+    /* 主色调 */
+    --primary-color: #8B5CF6;
+    --primary-dark: #7C3AED;
+    --primary-light: #E9D5FF;
+
+    /* 文字颜色 */
+    --text-primary: #18181B;
+    --text-secondary: #71717A;
+
+    /* 背景颜色 */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F9FAFB;
+    --bg-card: #F4F4F5;
+
+    /* 边框颜色 */
+    --border-color: #E4E4E7;
+
+    /* 状态颜色 */
+    --success-color: #059669;
+    --success-bg: #D1FAE5;
+    --warning-color: #F59E0B;
+    --warning-bg: #FEF3C7;
+    --error-color: #DC2626;
+    --error-bg: #FEE2E2;
+    --info-color: #3B82F6;
+    --info-bg: #DBEAFE;
+}
+
+/* ===== AntDesign 组件样式覆盖 ===== */
+
+/* 按钮 */
+.ant-btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+}
+
+/* 卡片 */
+.ant-card {
+    border-radius: 24px !important;
+    border: none !important;
+}
+
+.ant-card-bordered {
+    border: 1px solid var(--border-color) !important;
+}
+
+/* 标签 */
+.ant-tag {
+    border-radius: 12px !important;
+    border: none !important;
+    font-family: 'Inter', sans-serif;
+}
+
+/* 表格 */
+.ant-table {
+    border-radius: 24px !important;
+    font-family: 'Inter', sans-serif;
+}
+
+.ant-table-wrapper {
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+/* 输入框 */
+.ant-input,
+.ant-input-number,
+.ant-input-affix-wrapper,
+.ant-picker {
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-picker:focus,
+.ant-picker-focused {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1) !important;
+}
+
+/* 选择器 */
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+    border-color: var(--primary-color) !important;
+}
+
+.ant-select-focused:not(.ant-select-disabled).ant-select-single .ant-select-selector {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1) !important;
+}
+
+.ant-select-selector {
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif;
+}
+
+/* 复选框和单选框 */
+.ant-checkbox-checked .ant-checkbox-inner {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.ant-radio-checked .ant-radio-inner {
+    border-color: var(--primary-color) !important;
+}
+
+.ant-radio-checked .ant-radio-inner::after {
+    background-color: var(--primary-color) !important;
+}
+
+/* 开关 */
+.ant-switch-checked {
+    background-color: var(--primary-color) !important;
+}
+
+/* 分页 */
+.ant-pagination-item-active {
+    border-color: var(--primary-color) !important;
+    background-color: var(--primary-color) !important;
+}
+
+.ant-pagination-item-active a {
+    color: #FFFFFF !important;
+}
+
+/* 菜单 */
+.ant-menu-item-selected {
+    background-color: var(--primary-color) !important;
+    color: #FFFFFF !important;
+}
+
+/* 布局 */
+.ant-layout {
+    background-color: var(--bg-primary);
+}
+
+.ant-layout-sider {
+    background-color: var(--bg-secondary) !important;
+}
+
+.ant-layout-content {
+    background-color: var(--bg-primary);
+}
+
+/* Modal和Drawer */
+.ant-modal-header,
+.ant-drawer-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ant-modal-title,
+.ant-drawer-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* 空状态 */
+.ant-empty {
+    color: var(--text-secondary);
+}
+
+.ant-empty-description {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-secondary);
+}
+
+/* 加载状态 */
+.ant-spin {
+    color: var(--primary-color);
+}
+
+/* ===== 通用工具类 ===== */
+
+/* 加载容器 */
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    width: 100%;
+}
+
+/* ===== 页面过渡动画 ===== */
+
+/* 淡入动画关键帧 - 供所有页面使用 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* 按钮点击反馈动画 */
+.ant-btn:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+/* 卡片悬停效果 */
+.ant-card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ant-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 表格行悬停效果 */
+.ant-table-tbody > tr {
+    transition: background-color 0.2s ease;
+}
+
+/* 链接悬停效果 */
+a {
+    transition: color 0.2s ease;
+}
+
+/* ===== 滚动条样式 ===== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* ===== Blazor 错误边界 ===== */
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+/* ===== 响应式布局 ===== */
+@media (max-width: 768px) {
+    /* 侧边栏在移动端隐藏 */
+    .ant-layout-sider {
+        position: fixed !important;
+        left: -280px;
+        z-index: 999;
+        transition: left 0.3s ease;
+        height: 100vh;
+    }
+
+    .ant-layout-sider.mobile-visible {
+        left: 0;
+    }
+
+    /* 内容区域在移动端全宽 */
+    .ant-layout-content {
+        margin-left: 0 !important;
+    }
+}
+
+/* ===== 打印样式 ===== */
+@media print {
+    .ant-layout-sider,
+    .ant-page-header-extra {
+        display: none !important;
+    }
+}

@@ -1,0 +1,511 @@
+@page "/sync-config"
+@rendermode InteractiveServer
+@using FeeQuery.Shared.Models
+@using FeeQuery.Data
+@using Microsoft.EntityFrameworkCore
+@using FeeQuery.Core.Services
+@inject ApplicationDbContext DbContext
+@inject BackupService BackupService
+@inject IMessageService Message
+
+
+<div class="sync-config-page">
+<PageHeader Class="ant-page-header">
+    <PageHeaderTitle>
+        <div class="page-header-title">同步配置管理</div>
+    </PageHeaderTitle>
+    <PageHeaderSubtitle>
+        <div class="page-header-subtitle">为每个云账号配置数据同步策略</div>
+    </PageHeaderSubtitle>
+</PageHeader>
+
+<div class="sync-config-content">
+
+<Tabs DefaultActiveKey="1">
+    <TabPane Key="1" Tab="账号同步配置">
+        <div class="tab-content">
+            <Alert Type="@AlertType.Info" ShowIcon="true" Message="为每个云账号单独配置同步策略，或使用全局默认配置" />
+
+            <div class="table-section">
+                <Table TItem="AccountSyncConfig"
+                       DataSource="@accountConfigs"
+                       Loading="@loading"
+                       Bordered
+                       RowKey="@(record => record.AccountId.ToString())">
+                    <PropertyColumn Property="c => c.AccountName" Title="账号名称">
+                        <Space>
+                            <SpaceItem>@context.AccountName</SpaceItem>
+                            <SpaceItem>
+                                <Tag Color="@("blue")">@context.ProviderName</Tag>
+                            </SpaceItem>
+                        </Space>
+                    </PropertyColumn>
+                    <Column Title="启用同步" TData="bool">
+                        <Switch Value="@context.IsEnabled"
+                                ValueChanged="@(async (bool value) => await ToggleSync(context.AccountId, value))"
+                                CheckedChildren="启用"
+                                UnCheckedChildren="禁用" />
+                    </Column>
+                    <Column Title="同步余额" TData="bool">
+                        <Switch Value="@context.SyncBalance"
+                                ValueChanged="@(async (bool value) => await ToggleSyncBalance(context.AccountId, value))"
+                                Disabled="@(!context.IsEnabled)" />
+                    </Column>
+                    <Column Title="同步账单" TData="bool">
+                        <Switch Value="@context.SyncBilling"
+                                ValueChanged="@(async (bool value) => await ToggleSyncBilling(context.AccountId, value))"
+                                Disabled="@(!context.IsEnabled)" />
+                    </Column>
+                    <Column Title="同步间隔" TData="int">
+                        <AntDesign.InputNumber Value="@context.IntervalMinutes"
+                                     ValueChanged="@(async (int value) => await UpdateInterval(context.AccountId, value))"
+                                     Min="5"
+                                     Max="1440"
+                                     Step="5"
+                                     Disabled="@(!context.IsEnabled)" />
+                        <span class="secondary-text">分钟</span>
+                    </Column>
+                    <Column Title="重试次数" TData="int">
+                        <AntDesign.InputNumber Value="@context.RetryCount"
+                                     ValueChanged="@(async (int value) => await UpdateRetryCount(context.AccountId, value))"
+                                     Min="0"
+                                     Max="10"
+                                     Disabled="@(!context.IsEnabled)" />
+                    </Column>
+                    <Column Title="下次同步" TData="DateTime?">
+                        @if (context.NextSyncAt.HasValue)
+                        {
+                            <span>@context.NextSyncAt.Value.ToLocalTime().ToString("MM-dd HH:mm")</span>
+                        }
+                        else
+                        {
+                            <span class="secondary-text">-</span>
+                        }
+                    </Column>
+                    <ActionColumn Title="操作">
+                        <div class="action-buttons">
+                            <a class="action-link" @onclick="() => ShowEditDrawer(context)">
+                                <Icon Type="setting" Theme="@IconThemeType.Outline" />
+                                高级配置
+                            </a>
+                            <Popconfirm Title="确定要重置为全局配置吗？"
+                                        OnConfirm="() => ResetToGlobal(context.AccountId)">
+                                <a class="action-link">重置</a>
+                            </Popconfirm>
+                        </div>
+                    </ActionColumn>
+                </Table>
+            </div>
+        </div>
+    </TabPane>
+
+    <TabPane Key="2" Tab="全局默认配置">
+        <div class="tab-content">
+            <Alert Type="@AlertType.Warning" ShowIcon="true">
+                <MessageTemplate>
+                    全局配置作为新添加账号的默认设置。修改全局配置不会影响已有账号。
+                </MessageTemplate>
+            </Alert>
+
+            <Card Title="全局同步策略">
+                    @if (globalConfig != null)
+                    {
+                        <Form Model="@globalConfig" LabelColSpan="6" WrapperColSpan="18">
+                            <FormItem Label="启用同步">
+                                <Switch @bind-Value="@globalConfig.IsEnabled" CheckedChildren="启用" UnCheckedChildren="禁用" />
+                            </FormItem>
+                            <FormItem Label="同步余额">
+                                <Switch @bind-Value="@globalConfig.SyncBalance" />
+                                <div class="form-description">定期获取账号余额信息</div>
+                            </FormItem>
+                            <FormItem Label="同步账单">
+                                <Switch @bind-Value="@globalConfig.SyncBilling" />
+                                <div class="form-description">定期获取账单明细（功能开发中）</div>
+                            </FormItem>
+                            <FormItem Label="同步间隔（分钟）">
+                                <AntDesign.InputNumber @bind-Value="@globalConfig.IntervalMinutes" Min="5" Max="1440" Step="5" />
+                                <div class="form-description">
+                                    建议：余额监控 5-60 分钟，账单同步 60-1440 分钟
+                                </div>
+                            </FormItem>
+                            <FormItem Label="失败重试次数">
+                                <AntDesign.InputNumber @bind-Value="@globalConfig.RetryCount" Min="0" Max="10" />
+                            </FormItem>
+                            <FormItem Label="Cron表达式">
+                                <Input @bind-Value="@globalConfig.CronExpression" Placeholder="可选，如: 0 */1 * * *" />
+                                <div class="form-description">
+                                    如果设置Cron表达式，将忽略同步间隔设置
+                                </div>
+                            </FormItem>
+                            <FormItem Label="备注">
+                                <TextArea @bind-Value="@globalConfig.Remark" Rows="3" Placeholder="可选" />
+                            </FormItem>
+                            <FormItem WrapperColOffset="6">
+                                <Button Type="@ButtonType.Primary" OnClick="SaveGlobalConfig" Loading="@saving">
+                                    保存全局配置
+                                </Button>
+                            </FormItem>
+                        </Form>
+                    }
+                    else
+                    {
+                        <Empty Class="empty-state">
+                            <DescriptionTemplate>
+                                <p>全局配置不存在</p>
+                            </DescriptionTemplate>
+                            <ChildContent>
+                                <Button Type="@ButtonType.Primary" OnClick="CreateGlobalConfig">创建全局配置</Button>
+                            </ChildContent>
+                        </Empty>
+                    }
+                </Card>
+
+            <Card Title="批量操作">
+                <div class="batch-actions">
+                    <Button OnClick="ApplyGlobalToAll" Loading="@applyingGlobal">
+                        应用全局配置到所有账号
+                    </Button>
+                    <Text Type="@TextElementType.Secondary">将当前全局配置应用到所有已存在的账号</Text>
+                </div>
+            </Card>
+        </div>
+    </TabPane>
+</Tabs>
+</div>
+</div>
+
+<Drawer Width="480"
+        Closable="true"
+        @bind-Visible="@drawerVisible"
+        Title="@drawerTitle"
+        Placement="@DrawerPlacement.Right">
+    @if (selectedConfig != null)
+    {
+        <Form Model="@selectedConfig" Class="drawer-form" LabelColSpan="8" WrapperColSpan="16">
+            <FormItem Label="账号名称">
+                <Text>@selectedConfig.AccountName</Text>
+            </FormItem>
+            <FormItem Label="Cron表达式">
+                <Input @bind-Value="@selectedConfig.CronExpression" Placeholder="可选，如: 0 */1 * * *" />
+                <div class="form-description">
+                    如果设置Cron表达式，将忽略同步间隔设置
+                </div>
+            </FormItem>
+            <FormItem Label="备注">
+                <TextArea @bind-Value="@selectedConfig.Remark" Rows="3" />
+            </FormItem>
+        </Form>
+        <div class="drawer-footer">
+            <Button OnClick="CloseDrawer">取消</Button>
+            <Button Type="@ButtonType.Primary" OnClick="SaveAccountConfig">保存</Button>
+        </div>
+    }
+</Drawer>
+
+@code {
+    private List<AccountSyncConfig> accountConfigs = new();
+    private SyncConfiguration? globalConfig;
+    private bool loading = false;
+    private bool saving = false;
+    private bool applyingGlobal = false;
+    private bool drawerVisible = false;
+    private string drawerTitle = "";
+    private AccountSyncConfig? selectedConfig;
+
+    public class AccountSyncConfig
+    {
+        public int AccountId { get; set; }
+        public string AccountName { get; set; } = "";
+        public string ProviderName { get; set; } = "";
+        public int ConfigId { get; set; }
+        public bool IsEnabled { get; set; }
+        public bool SyncBalance { get; set; }
+        public bool SyncBilling { get; set; }
+        public int IntervalMinutes { get; set; }
+        public int RetryCount { get; set; }
+        public DateTime? NextSyncAt { get; set; }
+        public string? CronExpression { get; set; }
+        public string? Remark { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        try
+        {
+            // 加载全局配置
+            globalConfig = await DbContext.SyncConfigurations
+                .FirstOrDefaultAsync(c => c.CloudAccountId == null);
+
+            // 加载所有账号及其配置
+            var accounts = await DbContext.CloudAccounts
+                .Where(a => a.IsEnabled)
+                .ToListAsync();
+
+            var configs = await DbContext.SyncConfigurations
+                .Where(c => c.CloudAccountId != null)
+                .ToListAsync();
+
+            accountConfigs.Clear();
+
+            foreach (var account in accounts)
+            {
+                var config = configs.FirstOrDefault(c => c.CloudAccountId == account.Id);
+
+                // 如果没有配置，使用全局配置或创建默认配置
+                if (config == null)
+                {
+                    config = new SyncConfiguration
+                    {
+                        CloudAccountId = account.Id,
+                        IsEnabled = globalConfig?.IsEnabled ?? true,
+                        SyncBalance = globalConfig?.SyncBalance ?? true,
+                        SyncBilling = globalConfig?.SyncBilling ?? false,
+                        IntervalMinutes = globalConfig?.IntervalMinutes ?? 60,
+                        RetryCount = globalConfig?.RetryCount ?? 3
+                    };
+
+                    DbContext.SyncConfigurations.Add(config);
+                    await DbContext.SaveChangesAsync();
+                }
+
+                accountConfigs.Add(new AccountSyncConfig
+                {
+                    AccountId = account.Id,
+                    AccountName = account.Name,
+                    ProviderName = account.ProviderName,
+                    ConfigId = config.Id,
+                    IsEnabled = config.IsEnabled,
+                    SyncBalance = config.SyncBalance,
+                    SyncBilling = config.SyncBilling,
+                    IntervalMinutes = config.IntervalMinutes,
+                    RetryCount = config.RetryCount,
+                    NextSyncAt = config.NextSyncAt,
+                    CronExpression = config.CronExpression,
+                    Remark = config.Remark
+                });
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task ToggleSync(int accountId, bool enabled)
+    {
+        await UpdateConfigField(accountId, c => c.IsEnabled = enabled);
+    }
+
+    private async Task ToggleSyncBalance(int accountId, bool enabled)
+    {
+        await UpdateConfigField(accountId, c => c.SyncBalance = enabled);
+    }
+
+    private async Task ToggleSyncBilling(int accountId, bool enabled)
+    {
+        await UpdateConfigField(accountId, c => c.SyncBilling = enabled);
+    }
+
+    private async Task UpdateInterval(int accountId, int minutes)
+    {
+        await UpdateConfigField(accountId, c =>
+        {
+            c.IntervalMinutes = minutes;
+            c.NextSyncAt = DateTime.UtcNow.AddMinutes(minutes);
+        });
+    }
+
+    private async Task UpdateRetryCount(int accountId, int count)
+    {
+        await UpdateConfigField(accountId, c => c.RetryCount = count);
+    }
+
+    private async Task UpdateConfigField(int accountId, Action<SyncConfiguration> updateAction)
+    {
+        try
+        {
+            var config = await DbContext.SyncConfigurations
+                .FirstOrDefaultAsync(c => c.CloudAccountId == accountId);
+
+            if (config != null)
+            {
+                updateAction(config);
+                config.UpdatedAt = DateTime.UtcNow;
+                await DbContext.SaveChangesAsync();
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"更新失败: {ex.Message}");
+        }
+    }
+
+    private void ShowEditDrawer(AccountSyncConfig config)
+    {
+        selectedConfig = config;
+        drawerTitle = $"{config.AccountName} - 高级配置";
+        drawerVisible = true;
+    }
+
+    private void CloseDrawer()
+    {
+        drawerVisible = false;
+    }
+
+    private async Task SaveAccountConfig()
+    {
+        if (selectedConfig == null) return;
+
+        try
+        {
+            var config = await DbContext.SyncConfigurations
+                .FirstOrDefaultAsync(c => c.Id == selectedConfig.ConfigId);
+
+            if (config != null)
+            {
+                config.CronExpression = selectedConfig.CronExpression;
+                config.Remark = selectedConfig.Remark;
+                config.UpdatedAt = DateTime.UtcNow;
+                await DbContext.SaveChangesAsync();
+
+                Message.Success("保存成功");
+                CloseDrawer();
+                await LoadData();
+                await BackupService.CreateAutoConfigBackupAsync($"更新同步配置「{selectedConfig.AccountName}」");
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"保存失败: {ex.Message}");
+        }
+    }
+
+    private async Task ResetToGlobal(int accountId)
+    {
+        if (globalConfig == null)
+        {
+            Message.Warning("全局配置不存在");
+            return;
+        }
+
+        try
+        {
+            var config = await DbContext.SyncConfigurations
+                .FirstOrDefaultAsync(c => c.CloudAccountId == accountId);
+
+            if (config != null)
+            {
+                config.IsEnabled = globalConfig.IsEnabled;
+                config.SyncBalance = globalConfig.SyncBalance;
+                config.SyncBilling = globalConfig.SyncBilling;
+                config.IntervalMinutes = globalConfig.IntervalMinutes;
+                config.RetryCount = globalConfig.RetryCount;
+                config.CronExpression = globalConfig.CronExpression;
+                config.UpdatedAt = DateTime.UtcNow;
+                await DbContext.SaveChangesAsync();
+
+                Message.Success("已重置为全局配置");
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"重置失败: {ex.Message}");
+        }
+    }
+
+    private async Task SaveGlobalConfig()
+    {
+        if (globalConfig == null) return;
+
+        saving = true;
+        try
+        {
+            globalConfig.UpdatedAt = DateTime.UtcNow;
+            await DbContext.SaveChangesAsync();
+            Message.Success("全局配置保存成功");
+            await BackupService.CreateAutoConfigBackupAsync("更新全局同步配置");
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"保存失败: {ex.Message}");
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task CreateGlobalConfig()
+    {
+        try
+        {
+            globalConfig = new SyncConfiguration
+            {
+                CloudAccountId = null,
+                IsEnabled = true,
+                SyncBalance = true,
+                SyncBilling = false,
+                IntervalMinutes = 60,
+                RetryCount = 3
+            };
+
+            DbContext.SyncConfigurations.Add(globalConfig);
+            await DbContext.SaveChangesAsync();
+
+            Message.Success("全局配置创建成功");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"创建失败: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyGlobalToAll()
+    {
+        if (globalConfig == null)
+        {
+            Message.Warning("全局配置不存在");
+            return;
+        }
+
+        applyingGlobal = true;
+        try
+        {
+            var configs = await DbContext.SyncConfigurations
+                .Where(c => c.CloudAccountId != null)
+                .ToListAsync();
+
+            foreach (var config in configs)
+            {
+                config.IsEnabled = globalConfig.IsEnabled;
+                config.SyncBalance = globalConfig.SyncBalance;
+                config.SyncBilling = globalConfig.SyncBilling;
+                config.IntervalMinutes = globalConfig.IntervalMinutes;
+                config.RetryCount = globalConfig.RetryCount;
+                config.CronExpression = globalConfig.CronExpression;
+                config.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await DbContext.SaveChangesAsync();
+            Message.Success($"已应用全局配置到 {configs.Count} 个账号");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"应用失败: {ex.Message}");
+        }
+        finally
+        {
+            applyingGlobal = false;
+        }
+    }
+}

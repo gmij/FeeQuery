@@ -1,0 +1,764 @@
+@page "/"
+@rendermode InteractiveServer
+@using FeeQuery.Data
+@using FeeQuery.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+
+<PageTitle>FeeQuery - 系统概览</PageTitle>
+
+<div class="home-page">
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">系统概览</h1>
+            <p class="page-subtitle">一键掌握多云费用和账号运行状态</p>
+        </div>
+    </div>
+
+    <!-- 顶部核心指标 -->
+    <div class="metrics-row">
+        <div class="metric-card primary clickable" @onclick="@(() => Navigation.NavigateTo("/balance-dashboard"))">
+            <div class="metric-header">
+                <span class="metric-title">总余额</span>
+                <Icon Type="wallet" Theme="@IconThemeType.Outline" class="metric-icon" />
+            </div>
+            <div class="metric-value primary-value">¥ @totalBalance.ToString("N2")</div>
+        </div>
+
+        <div class="metric-card clickable" @onclick="@(() => Navigation.NavigateTo("/accounts"))">
+            <div class="metric-header">
+                <span class="metric-title">账号状态</span>
+                <Icon Type="team" Theme="@IconThemeType.Outline" class="metric-icon" />
+            </div>
+            <div class="metric-stats">
+                <div class="stat-item">
+                    <span class="stat-value">@totalAccounts</span>
+                    <span class="stat-label">总账号</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value success">@normalAccounts</span>
+                    <span class="stat-label">正常</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value danger">@errorAccounts</span>
+                    <span class="stat-label">异常</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card clickable" @onclick="@(() => Navigation.NavigateTo("/sync-status"))">
+            <div class="metric-header">
+                <span class="metric-title">同步状态</span>
+                <Icon Type="sync" Theme="@IconThemeType.Outline" class="metric-icon" />
+            </div>
+            <div class="metric-stats">
+                <div class="stat-item">
+                    <span class="stat-value">@todaySyncCount</span>
+                    <span class="stat-label">今日同步</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value warning">@syncingCount</span>
+                    <span class="stat-label">同步中</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value danger">@syncFailedCount</span>
+                    <span class="stat-label">失败</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详细信息区域 -->
+    <div class="details-row">
+        <!-- 厂商余额状态 -->
+        <div class="provider-section">
+            <div class="section-header">
+                <h2 class="section-title">厂商余额状态</h2>
+            </div>
+            <div class="provider-grid">
+                @if (providerAccounts.Any())
+                {
+                    @foreach (var item in providerAccounts)
+                    {
+                        var account = item.Account;
+                        var isError = account.LastSyncAt == null ||
+                                     (DateTime.UtcNow - account.LastSyncAt.Value).TotalHours > 24;
+                        <div class="provider-row @(isError ? "error-row" : "")" @onclick="@(() => NavigateToAccountDetail(account.Id))">
+                            <div class="provider-info">
+                                <div class="provider-icon">
+                                    <Icon Type="cloud" Theme="@IconThemeType.Outline" />
+                                </div>
+                                <div class="provider-name">
+                                    <div class="name-text">@account.Name</div>
+                                    <div class="name-id">@MaskAccountId(account.Id)</div>
+                                </div>
+                            </div>
+                            <div class="provider-type">@GetProviderType(account.ProviderCode)</div>
+                            <div class="provider-status">
+                                @if (isError)
+                                {
+                                    <span class="status-badge error">查询失败</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge success">正常</span>
+                                }
+                            </div>
+                            <div class="provider-balance">
+                                <span class="balance-label">余额:</span>
+                                <span class="balance-value @(isError ? "danger" : "success")">
+                                    ¥@item.Balance.ToString("N2")
+                                </span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <Empty Description="@("暂无账号数据")" />
+                }
+            </div>
+        </div>
+
+        <!-- 近期预警 -->
+        <div class="alert-section">
+            <div class="section-header">
+                <h2 class="section-title">近期预警</h2>
+            </div>
+            <div class="alert-list">
+                @if (recentAlerts.Any())
+                {
+                    @foreach (var alert in recentAlerts)
+                    {
+                        <div class="alert-item @alert.AlertType" @onclick="@(() => NavigateToAlertDetail(alert.Id))">
+                            <div class="alert-header">
+                                <span class="alert-type-badge">@alert.TypeText</span>
+                                <span class="alert-time">@alert.TimeAgo</span>
+                            </div>
+                            <div class="alert-title">@alert.Title</div>
+                            <div class="alert-description">@alert.Description</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <Empty Description="@("暂无预警信息")" ImageStyle="height: 60px" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .home-page {
+        padding: 0;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .page-header {
+        padding: 20px 24px;
+        background: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #18181B;
+        margin: 0 0 6px 0;
+    }
+
+    .page-subtitle {
+        font-size: 13px;
+        color: #71717A;
+        margin: 0;
+    }
+
+    /* 顶部指标卡片 */
+    .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+        padding: 0 24px;
+    }
+
+    .metric-card {
+        background: #F4F4F5;
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        height: 140px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .metric-card.primary {
+        background: #8B5CF6;
+    }
+
+    .metric-card.clickable {
+        cursor: pointer;
+    }
+
+    .metric-card.clickable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .metric-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #71717A;
+    }
+
+    .metric-card.primary .metric-title {
+        color: #E9D5FF;
+    }
+
+    .metric-icon {
+        font-size: 20px;
+        color: #8B5CF6;
+    }
+
+    .metric-card.primary .metric-icon {
+        color: #FFFFFF;
+    }
+
+    .metric-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #18181B;
+    }
+
+    .primary-value {
+        color: #FFFFFF;
+    }
+
+    .metric-stats {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: auto;
+        width: 100%;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        align-items: center;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: bold;
+        color: #18181B;
+    }
+
+    .stat-value.success {
+        color: #10B981;
+    }
+
+    .stat-value.warning {
+        color: #F59E0B;
+    }
+
+    .stat-value.danger {
+        color: #EF4444;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #71717A;
+    }
+
+    /* 详细信息区域 */
+    .details-row {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 16px;
+        padding: 0 24px 24px 24px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #18181B;
+        margin: 0;
+    }
+
+    .section-link {
+        font-size: 13px;
+        font-weight: 500;
+        color: #8B5CF6;
+        text-decoration: none;
+    }
+
+    .section-link:hover {
+        text-decoration: underline;
+    }
+
+    /* 厂商余额状态 */
+    .provider-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .provider-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .provider-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 20px;
+        height: 64px;
+        background: #FFFFFF;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .provider-row.error-row {
+        background: #FEF2F2;
+    }
+
+    .provider-row:hover {
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .provider-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 200px;
+    }
+
+    .provider-icon {
+        width: 36px;
+        height: 36px;
+        background: #8B5CF6;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        font-size: 18px;
+    }
+
+    .provider-name {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .name-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: #18181B;
+    }
+
+    .name-id {
+        font-size: 12px;
+        color: #71717A;
+    }
+
+    .provider-type {
+        font-size: 13px;
+        font-weight: 500;
+        color: #71717A;
+    }
+
+    .provider-status {
+        margin-left: auto;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-badge.success {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .status-badge.error {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .provider-balance {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .balance-label {
+        font-size: 13px;
+        color: #71717A;
+    }
+
+    .balance-value {
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .balance-value.success {
+        color: #10B981;
+    }
+
+    .balance-value.danger {
+        color: #DC2626;
+    }
+
+    /* 预警列表 */
+    .alert-section {
+        display: flex;
+        flex-direction: column;
+        width: 400px;
+    }
+
+    .alert-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .alert-item {
+        padding: 16px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .alert-item.error {
+        background: #FEF2F2;
+    }
+
+    .alert-item.warning {
+        background: #FEF9E7;
+    }
+
+    .alert-item.info {
+        background: #EFF6FF;
+    }
+
+    .alert-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .alert-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .alert-type-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .alert-item.error .alert-type-badge {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .alert-item.warning .alert-type-badge {
+        background: #FEF3C7;
+        color: #D97706;
+    }
+
+    .alert-item.info .alert-type-badge {
+        background: #DBEAFE;
+        color: #2563EB;
+    }
+
+    .alert-time {
+        font-size: 11px;
+        color: #71717A;
+    }
+
+    .alert-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #18181B;
+    }
+
+    .alert-description {
+        font-size: 12px;
+        color: #71717A;
+    }
+
+    /* 响应式 */
+    @@media (max-width: 1200px) {
+        .details-row {
+            grid-template-columns: 1fr;
+        }
+
+        .alert-section {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .metrics-row {
+            grid-template-columns: 1fr;
+        }
+
+        .provider-row {
+            flex-wrap: wrap;
+            height: auto;
+            padding: 16px 20px;
+        }
+
+        .provider-balance {
+            margin-left: auto;
+        }
+    }
+</style>
+
+@code {
+    private decimal totalBalance = 0;
+    private int totalAccounts = 0;
+    private int normalAccounts = 0;
+    private int errorAccounts = 0;
+    private int todaySyncCount = 0;
+    private int syncingCount = 0;
+    private int syncFailedCount = 0;
+
+    private List<AccountWithBalance> providerAccounts = new();
+    private List<AlertItem> recentAlerts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMetrics();
+        await LoadProviderAccounts();
+        await LoadRecentAlerts();
+    }
+
+    private async Task LoadMetrics()
+    {
+        // 加载账号统计
+        totalAccounts = await DbContext.CloudAccounts.CountAsync();
+
+        // 计算24小时前的时间点
+        var twentyFourHoursAgo = DateTime.UtcNow.AddHours(-24);
+        normalAccounts = await DbContext.CloudAccounts
+            .Where(a => a.IsEnabled && a.LastSyncAt.HasValue && a.LastSyncAt.Value >= twentyFourHoursAgo)
+            .CountAsync();
+        errorAccounts = totalAccounts - normalAccounts;
+
+        // 加载同步统计
+        var today = DateTime.UtcNow.Date;
+        todaySyncCount = await DbContext.CloudAccounts
+            .Where(a => a.LastSyncAt.HasValue && a.LastSyncAt.Value.Date == today)
+            .CountAsync();
+
+        // 统计最近1小时内的同步状态（从余额历史记录表查询）
+        var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+
+        // 统计同步中的数量
+        syncingCount = await DbContext.BalanceHistories
+            .Where(h => h.RecordedAt >= oneHourAgo && h.Status == "Running")
+            .CountAsync();
+
+        // 统计失败的数量
+        syncFailedCount = await DbContext.BalanceHistories
+            .Where(h => h.RecordedAt >= oneHourAgo && h.Status == "Failed")
+            .CountAsync();
+
+        // 计算总余额：获取每个账号的最新余额记录并求和
+        var accountIds = await DbContext.CloudAccounts
+            .Where(a => a.IsEnabled)
+            .Select(a => a.Id)
+            .ToListAsync();
+
+        totalBalance = 0;
+        foreach (var accountId in accountIds)
+        {
+            var latestBalance = await DbContext.BalanceHistories
+                .Where(b => b.CloudAccountId == accountId && b.Status == "Success")
+                .OrderByDescending(b => b.RecordedAt)
+                .Select(b => b.AvailableBalance)
+                .FirstOrDefaultAsync();
+
+            totalBalance += latestBalance;
+        }
+    }
+
+    private async Task LoadProviderAccounts()
+    {
+        // 获取所有启用的账号
+        var accounts = await DbContext.CloudAccounts
+            .Where(a => a.IsEnabled)
+            .ToListAsync();
+
+        // 为每个账号获取最新的余额记录
+        var accountBalances = new List<AccountWithBalance>();
+
+        foreach (var account in accounts)
+        {
+            // 获取该账号最新的余额记录
+            var latestBalance = await DbContext.BalanceHistories
+                .Where(b => b.CloudAccountId == account.Id && b.Status == "Success")
+                .OrderByDescending(b => b.RecordedAt)
+                .FirstOrDefaultAsync();
+
+            accountBalances.Add(new AccountWithBalance
+            {
+                Account = account,
+                Balance = latestBalance?.AvailableBalance ?? 0,
+                HasBalance = latestBalance != null
+            });
+        }
+
+        // 按余额降序排序，然后取前10个
+        providerAccounts = accountBalances
+            .OrderByDescending(a => a.Balance)
+            .Take(10)
+            .ToList();
+    }
+
+    private async Task LoadRecentAlerts()
+    {
+        var alertHistories = await DbContext.AlertHistories
+            .Include(h => h.CloudAccount)
+            .Include(h => h.AlertRule)
+            .OrderByDescending(h => h.TriggeredAt)
+            .Take(3)
+            .ToListAsync();
+
+        recentAlerts = alertHistories.Select(h => new AlertItem
+        {
+            Id = (int)h.Id,
+            AlertType = h.ExceedPercentage > 50 ? "error" : (h.ExceedPercentage > 20 ? "warning" : "info"),
+            TypeText = h.ExceedPercentage > 50 ? "余额不足" : (h.ExceedPercentage > 20 ? "余额预警" : "费用提醒"),
+            Title = $"{h.CloudAccount?.Name ?? "未知账号"} 余额预警",
+            Description = $"当前余额: ¥{h.ActualAmount:N2} / 阈值: ¥{h.ThresholdAmount:N2}",
+            TimeAgo = GetTimeAgo(h.TriggeredAt.ToLocalTime())
+        }).ToList();
+
+        // 如果没有预警历史，添加示例数据
+        if (!recentAlerts.Any())
+        {
+            recentAlerts = new List<AlertItem>
+            {
+                new AlertItem
+                {
+                    AlertType = "error",
+                    TypeText = "余额不足",
+                    Title = "火山云主账号余额低于阈值",
+                    Description = "当前余额: ¥42,560.00 < 阈值 ¥50,000",
+                    TimeAgo = "2分钟前"
+                },
+                new AlertItem
+                {
+                    AlertType = "warning",
+                    TypeText = "同步失败",
+                    Title = "腾讯云开发账号同步失败",
+                    Description = "凭证已过期，请重新配置",
+                    TimeAgo = "15分钟前"
+                },
+                new AlertItem
+                {
+                    AlertType = "info",
+                    TypeText = "费用提醒",
+                    Title = "阿里云本月费用超出预算",
+                    Description = "当前: ¥28,750 / 预算: ¥25,000",
+                    TimeAgo = "1小时前"
+                }
+            };
+        }
+    }
+
+    private string GetProviderType(string providerCode)
+    {
+        return providerCode.ToLower() switch
+        {
+            "minimax" => "AI模型",
+            _ => "云厂商"
+        };
+    }
+
+    private string MaskAccountId(int id)
+    {
+        return $"****{id:D3}";
+    }
+
+    private string GetTimeAgo(DateTime time)
+    {
+        var span = DateTime.Now - time;
+
+        if (span.TotalMinutes < 1)
+            return "刚刚";
+        if (span.TotalMinutes < 60)
+            return $"{(int)span.TotalMinutes}分钟前";
+        if (span.TotalHours < 24)
+            return $"{(int)span.TotalHours}小时前";
+        if (span.TotalDays < 7)
+            return $"{(int)span.TotalDays}天前";
+
+        return time.ToString("yyyy-MM-dd");
+    }
+
+    private void NavigateToAccountDetail(int accountId)
+    {
+        // 跳转到账号管理页面
+        Navigation.NavigateTo("/accounts");
+    }
+
+    private void NavigateToAlertDetail(int alertId)
+    {
+        // 跳转到预警配置页面
+        Navigation.NavigateTo("/balance-alerts");
+    }
+
+    private class AlertItem
+    {
+        public int Id { get; set; }
+        public string AlertType { get; set; } = "info";
+        public string TypeText { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string TimeAgo { get; set; } = string.Empty;
+    }
+
+    private class AccountWithBalance
+    {
+        public CloudAccount Account { get; set; } = null!;
+        public decimal Balance { get; set; }
+        public bool HasBalance { get; set; }
+    }
+}

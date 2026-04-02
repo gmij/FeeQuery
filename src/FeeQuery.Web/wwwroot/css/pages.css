@@ -1,0 +1,233 @@
+/* FeeQuery 页面样式 - 基于设计稿 */
+
+/* 页面容器 */
+.page-container {
+    padding: 32px 40px;
+}
+
+/* 表格区域样式 */
+.table-section {
+    width: 100%;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #18181B;
+    margin: 0;
+}
+
+/* 状态徽章样式 */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.status-badge-success {
+    background-color: #DCFCE7;
+    color: #15803D;
+}
+
+.status-badge-error {
+    background-color: #FEE2E2;
+    color: #DC2626;
+}
+
+.status-badge-warning {
+    background-color: #FEF3C7;
+    color: #CA8A04;
+}
+
+.status-badge-info {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* 抽屉表单样式优化 */
+.drawer-form .ant-form-item-label > label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #18181B;
+}
+
+.drawer-form .ant-input,
+.drawer-form .ant-input-number,
+.drawer-form .ant-select-selector,
+.drawer-form .ant-input-textarea {
+    border-radius: 12px;
+    background-color: #F4F4F5;
+    border: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+.drawer-form .ant-input::placeholder,
+.drawer-form .ant-input-number::placeholder,
+.drawer-form .ant-input-textarea::placeholder {
+    color: #A1A1AA;
+    font-family: 'Inter', sans-serif;
+}
+
+.drawer-form .ant-form-item-explain,
+.drawer-form .ant-form-item-extra {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #71717A;
+    margin-top: 8px;
+}
+
+/* 通知方式选择标签样式 */
+.notify-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notify-option-selected {
+    background-color: #8B5CF6;
+    color: #FFFFFF;
+}
+
+.notify-option-unselected {
+    background-color: #F4F4F5;
+    color: #71717A;
+}
+
+.notify-option:hover {
+    opacity: 0.8;
+}
+
+/* 开关样式覆盖 */
+.ant-switch-checked {
+    background-color: #8B5CF6 !important;
+}
+
+/* 抽屉底部按钮区域 */
+.drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid #E4E4E7;
+}
+
+.drawer-footer .ant-btn {
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 按钮组样式 */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #8B5CF6;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.action-link:hover {
+    opacity: 0.8;
+}
+
+.action-link-danger {
+    color: #DC2626;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+    .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+
+/* 通用辅助类 */
+.form-description {
+    color: #999;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.form-hint {
+    color: rgba(0, 0, 0, 0.45);
+    font-size: 14px;
+}
+
+.help-icon {
+    margin-left: 8px;
+    color: #1890ff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.error-text {
+    font-size: 12px;
+    color: #ff4d4f;
+    cursor: help;
+}
+
+.secondary-text {
+    color: #999;
+}
+
+.tab-content {
+    padding-top: 16px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+}
+
+.batch-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* 备份文件路径单元格 */
+.backup-filepath {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.backup-filepath-text {
+    word-break: break-all;
+    white-space: normal;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 12px;
+    color: #595959;
+    line-height: 1.6;
+}

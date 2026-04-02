@@ -1,0 +1,114 @@
+## Visual Studio 相关
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+
+## 构建输出
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+## 测试结果
+**/TestResults/
+**/*.trx
+**/*_i.c
+**/*_p.c
+**/*_h.h
+**/*.ilk
+**/*.meta
+**/*.obj
+**/*.iobj
+**/*.pch
+**/*.pdb
+**/*.ipdb
+**/*.pgc
+**/*.pgd
+**/*.rsp
+**/*.sbr
+**/*.tlb
+**/*.tli
+**/*.tlh
+**/*.tmp
+**/*.tmp_proj
+**/*_wpftmp.csproj
+**/*.log
+**/*.vspscc
+**/*.vssscc
+
+## 数据库文件
+*.db
+*.db-shm
+*.db-wal
+
+## 数据目录（Docker 运行时数据）
+data/
+
+## NuGet 包
+**/packages/*
+*.nupkg
+*.snupkg
+
+## 用户机密和配置
+**/appsettings.Development.json
+**/secrets.json
+**/launchSettings.json
+
+## Node modules（如果有前端构建）
+**/node_modules/
+**/npm-debug.log
+
+## IDE 配置
+**/.idea/
+**/.DS_Store
+**/Thumbs.db
+
+## Playwright 相关
+.playwright-mcp/
+
+## Rider
+.idea/
+*.sln.iml
+
+## User-specific files
+*.rsuser
+
+## Backup & report files from converting old project files
+_UpgradeReport_Files/
+Backup*/
+UpgradeLog*.XML
+UpgradeLog*.htm
+ServiceFabricBackup/
+*.rptproj.bak
+
+## Claude Code 相关（AI 开发辅助工具，不纳入公开仓库）
+.claude/
+CLAUDE.md
+
+## 设计稿文件（二进制，不适合 git 管理）
+*.pen
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## StyleCop
+StyleCopReport.xml
+
+## Azure Functions localsettings file
+local.settings.json
+
+## BenchmarkDotNet
+**/BenchmarkDotNet.Artifacts/
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Backup files
+*.bak

@@ -1,0 +1,43 @@
+/* 备份管理页面样式 */
+
+.backup-page {
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    width: 100%;
+    animation: fadeIn 0.15s ease-in;
+}
+
+.backup-content {
+    padding: 40px;
+}
+
+.backup-page ::deep .ant-page-header {
+    padding: 40px 40px 0 40px;
+    background: transparent;
+}
+
+.backup-page ::deep .page-header-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0;
+}
+
+.backup-page ::deep .page-header-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #71717A;
+    margin: 0;
+}
+
+.backup-remark {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 13px;
+    color: #52525B;
+    cursor: default;
+}

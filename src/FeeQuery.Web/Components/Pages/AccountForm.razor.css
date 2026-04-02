@@ -1,0 +1,11 @@
+/* 帮助链接按钮 */
+.help-link-button {
+    margin-left: 4px;
+    padding: 0;
+}
+
+/* 帮助列表 */
+::deep .help-list {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}

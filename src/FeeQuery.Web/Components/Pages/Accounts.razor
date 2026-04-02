@@ -1,0 +1,244 @@
+@page "/accounts"
+@rendermode InteractiveServer
+@using FeeQuery.Core.Services
+@using FeeQuery.Shared.Models
+@inherits BasePage
+@inject CloudAccountService AccountService
+@inject BackupService BackupService
+
+
+<div class="accounts-page">
+    <PageHeader Class="ant-page-header">
+        <PageHeaderTitle>
+            <div class="page-header-title">云账号管理</div>
+        </PageHeaderTitle>
+        <PageHeaderSubtitle>
+            <div class="page-header-subtitle">管理您的多云账号和凭证</div>
+        </PageHeaderSubtitle>
+        <PageHeaderExtra>
+            <Button Type="@ButtonType.Primary"
+                    OnClick="ShowAddDrawer"
+                    Class="add-button">
+                <Icon Type="plus" Theme="@IconThemeType.Outline" />
+                添加账号
+            </Button>
+        </PageHeaderExtra>
+    </PageHeader>
+
+    @if (loading)
+    {
+        <div class="loading-container">
+            <Spin Size="@SpinSize.Large" />
+        </div>
+    }
+    else
+    {
+        <div class="accounts-content">
+            <!-- 统计卡片行 -->
+            <Row Gutter="16" Class="stats-row">
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card">
+                        <Statistic Title="总账号数" Value="@accounts.Count" />
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card">
+                        <Statistic Title="已启用" Value="@accounts.Count(a => a.IsEnabled)" />
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card stat-card-primary">
+                        <Statistic Title="今日同步" Value="@GetTodaySyncCount()" />
+                    </Card>
+                </AntDesign.Col>
+            </Row>
+
+            <!-- 账号列表表格 -->
+            @if (accounts.Any(IsPlaintextCredential))
+            {
+                <Alert Type="@AlertType.Warning"
+                       ShowIcon="true"
+                       Style="margin-bottom: 16px;"
+                       Message="存在凭证未加密的账号"
+                       Description="以下账号的密钥以明文存储，存在安全风险。请点击各账号行的「凭证未加密，点击重新保存」标签，重新填写并保存凭证完成加密。" />
+            }
+            <Card Bordered="false" Class="accounts-table-card">
+                @if (accounts.Count == 0)
+                {
+                    <Empty>
+                        <DescriptionTemplate>
+                            <span>暂无账号数据</span>
+                        </DescriptionTemplate>
+                        <ChildContent>
+                            <Button Type="@ButtonType.Primary" OnClick="ShowAddDrawer">
+                                添加账号
+                            </Button>
+                        </ChildContent>
+                    </Empty>
+                }
+                else
+                {
+                    <Table TItem="CloudAccount"
+                           DataSource="@accounts"
+                           Bordered="false"
+                           Size="@TableSize.Middle">
+                        <Column Title="账号名称" TData="string">
+                            <div class="account-name">@context.Name</div>
+                            @if (context.ProviderCode == "siliconflow" && IsSiliconFlowTokenStale(context))
+                            {
+                                <div style="margin-top: 2px; cursor: pointer;"
+                                     @onclick="() => ShowEditDrawer(context)">
+                                    <Tag Color="@("warning")" Style="font-size: 11px;">
+                                        ⚠ 会话令牌可能已过期，点击更新
+                                    </Tag>
+                                </div>
+                            }
+                            @if (IsPlaintextCredential(context))
+                            {
+                                <div style="margin-top: 2px; cursor: pointer;"
+                                     @onclick="() => ShowEditDrawer(context)">
+                                    <Tag Color="@("error")" Style="font-size: 11px;">
+                                        ⚠ 凭证未加密，点击重新保存
+                                    </Tag>
+                                </div>
+                            }
+                        </Column>
+                        <Column Title="云厂商" TData="string">
+                            <Tag Class="@($"provider-tag provider-tag-{context.ProviderCode.ToLower()}")">
+                                @context.ProviderName
+                            </Tag>
+                        </Column>
+                        <Column Title="状态" TData="string">
+                            @if (context.IsEnabled)
+                            {
+                                <Tag Color="@("success")">已启用</Tag>
+                            }
+                            else
+                            {
+                                <Tag Color="@("error")">已禁用</Tag>
+                            }
+                        </Column>
+                        <Column Title="最后同步" TData="string">
+                            <div class="sync-time">
+                                @(context.LastSyncAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")
+                            </div>
+                        </Column>
+                        <ActionColumn Title="操作">
+                            <Space Size="@("8")">
+                                <SpaceItem>
+                                    <Button Size="@ButtonSize.Small"
+                                            OnClick="() => ShowEditDrawer(context)">
+                                        编辑
+                                    </Button>
+                                </SpaceItem>
+                                <SpaceItem>
+                                    <Popconfirm Title="确定要删除这个账号吗？"
+                                                OnConfirm="() => DeleteAccount(context.Id)">
+                                        <Button Size="@ButtonSize.Small" Danger>
+                                            删除
+                                        </Button>
+                                    </Popconfirm>
+                                </SpaceItem>
+                            </Space>
+                        </ActionColumn>
+                    </Table>
+                }
+            </Card>
+        </div>
+    }
+</div>
+
+<Drawer Width="720"
+        Closable="true"
+        @bind-Visible="@drawerVisible"
+        Title="@drawerTitle"
+        Placement="@DrawerPlacement.Right">
+    <AccountForm Account="@selectedAccount"
+                 IsNew="@isNewAccount"
+                 OnSuccess="HandleFormSuccess"
+                 OnCancel="HandleFormCancel" />
+</Drawer>
+
+@code {
+    private List<CloudAccount> accounts = new();
+    private bool loading = false;
+    private bool drawerVisible = false;
+    private string drawerTitle = "";
+    private CloudAccount? selectedAccount = null;
+    private bool isNewAccount = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccounts();
+    }
+
+    private async Task LoadAccounts()
+    {
+        loading = true;
+        try
+        {
+            accounts = await AccountService.GetAllAccountsAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowAddDrawer()
+    {
+        drawerTitle = "添加云账号";
+        isNewAccount = true;
+        selectedAccount = null;
+        drawerVisible = true;
+    }
+
+    private void ShowEditDrawer(CloudAccount account)
+    {
+        drawerTitle = "编辑云账号";
+        isNewAccount = false;
+        selectedAccount = account;
+        drawerVisible = true;
+    }
+
+    private async Task HandleFormSuccess()
+    {
+        drawerVisible = false;
+        await LoadAccounts();
+        await ShowSuccess(isNewAccount ? "账号添加成功" : "账号更新成功");
+    }
+
+    private void HandleFormCancel()
+    {
+        drawerVisible = false;
+    }
+
+    private async Task DeleteAccount(int id)
+    {
+        var name = accounts.FirstOrDefault(a => a.Id == id)?.Name ?? id.ToString();
+        await ExecuteAsync(async () =>
+        {
+            await AccountService.DeleteAccountAsync(id);
+            await LoadAccounts();
+            await ShowSuccess("账号删除成功");
+            await BackupService.CreateAutoConfigBackupAsync($"删除账号「{name}」");
+        }, "删除账号");
+    }
+
+    private int GetTodaySyncCount()
+    {
+        var today = DateTime.Today;
+        return accounts.Count(a => a.LastSyncAt.HasValue && a.LastSyncAt.Value.Date == today);
+    }
+
+    private bool IsSiliconFlowTokenStale(CloudAccount account)
+    {
+        return (DateTime.UtcNow - account.UpdatedAt).TotalDays > 14;
+    }
+
+    private static bool IsPlaintextCredential(CloudAccount account)
+    {
+        return !string.IsNullOrEmpty(account.EncryptedCredentials)
+            && account.EncryptedCredentials.TrimStart().StartsWith('{');
+    }
+}

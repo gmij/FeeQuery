@@ -1,0 +1,267 @@
+/* 首页样式 */
+
+/* 页面容器 */
+.home-page {
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    width: 100%;
+    padding: 32px;
+    animation: fadeIn 0.15s ease-in;
+}
+
+/* 欢迎区域 */
+.welcome-section {
+    margin-bottom: 32px;
+}
+
+.welcome-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0 0 8px 0;
+}
+
+.welcome-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #71717A;
+    margin: 0;
+}
+
+/* 快速操作卡片 */
+.quick-actions {
+    margin-bottom: 32px;
+}
+
+.quick-actions-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+    margin: 0 0 16px 0;
+}
+
+.action-card {
+    background-color: #F9FAFB;
+    border: 1px solid #E4E4E7;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.action-card:hover {
+    background-color: #F4F4F5;
+    border-color: #8B5CF6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.action-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: #8B5CF6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-card-icon .anticon {
+    font-size: 24px;
+    color: #FFFFFF;
+}
+
+.action-card-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #18181B;
+    margin: 0;
+}
+
+.action-card-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #71717A;
+    margin: 0;
+}
+
+/* 概览区域 */
+.overview-section {
+    margin-bottom: 32px;
+}
+
+.overview-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+    margin: 0 0 16px 0;
+}
+
+.overview-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E4E4E7;
+    border-radius: 12px;
+    padding: 20px;
+    height: 100%;
+}
+
+.overview-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.overview-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.overview-card-icon.primary {
+    background-color: #E9D5FF;
+}
+
+.overview-card-icon.success {
+    background-color: #D1FAE5;
+}
+
+.overview-card-icon.warning {
+    background-color: #FEF3C7;
+}
+
+.overview-card-icon .anticon {
+    font-size: 20px;
+}
+
+.overview-card-icon.primary .anticon {
+    color: #8B5CF6;
+}
+
+.overview-card-icon.success .anticon {
+    color: #059669;
+}
+
+.overview-card-icon.warning .anticon {
+    color: #F59E0B;
+}
+
+.overview-card-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #71717A;
+    margin: 0;
+}
+
+.overview-card-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0;
+}
+
+.overview-card-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #71717A;
+    margin: 8px 0 0 0;
+}
+
+/* 最近活动 */
+.recent-activity {
+    margin-bottom: 32px;
+}
+
+.recent-activity-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+    margin: 0 0 16px 0;
+}
+
+.activity-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E4E4E7;
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #E4E4E7;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background-color: #F4F4F5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.activity-icon .anticon {
+    font-size: 18px;
+    color: #71717A;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #18181B;
+    margin: 0 0 4px 0;
+}
+
+.activity-time {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #71717A;
+    margin: 0;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .home-page {
+        padding: 24px 16px;
+    }
+
+    .welcome-title {
+        font-size: 28px;
+    }
+
+    .overview-card-value {
+        font-size: 24px;
+    }
+}

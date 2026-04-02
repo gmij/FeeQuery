@@ -1,0 +1,18 @@
+@inherits LayoutComponentBase
+
+<Layout Style="min-height: 100vh;">
+    <Sider Width="280" Style="background: #F9FAFB;">
+        <NavMenu />
+    </Sider>
+    <Layout Style="padding: 0;">
+        <Content Style="background: #FFFFFF; padding: 0; margin: 0;">
+            @Body
+        </Content>
+    </Layout>
+</Layout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

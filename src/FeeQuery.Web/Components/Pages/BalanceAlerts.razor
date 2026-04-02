@@ -1,0 +1,641 @@
+@page "/balance-alerts"
+@rendermode InteractiveServer
+@using FeeQuery.Shared.Models
+@using FeeQuery.Data
+@using FeeQuery.Core.Services
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject BackupService BackupService
+@inject IMessageService Message
+@inject BalanceAlertService BalanceAlertService
+
+
+<div class="balance-alerts-page">
+    <PageHeader Class="ant-page-header">
+        <PageHeaderTitle>
+            <div class="page-header-title">余额预警配置</div>
+        </PageHeaderTitle>
+        <PageHeaderSubtitle>
+            <div class="page-header-subtitle">配置余额预警规则，当账号余额低于阈值时自动通知</div>
+        </PageHeaderSubtitle>
+    </PageHeader>
+
+<div class="balance-alerts-content">
+
+<Tabs @bind-ActiveKey="@activeTab" OnChange="OnTabChange">
+    <TabPane Key="1" Tab="预警规则">
+        <div class="tab-content">
+            @* 统计卡片 *@
+            <Row Gutter="16" Class="stats-row">
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card stat-card-default">
+                        <Statistic Title="总规则数" Value="@alertRules.Count" />
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card stat-card-success">
+                        <Statistic Title="启用中" Value="@alertRules.Count(r => r.IsEnabled)" />
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="8">
+                    <Card Bordered="false" Class="stat-card stat-card-error">
+                        <Statistic Title="已触发" Value="@triggeredCount" />
+                    </Card>
+                </AntDesign.Col>
+            </Row>
+
+            @* 预警规则列表 *@
+            <div class="table-section">
+                <div class="table-header">
+                    <Title Level="4">预警规则列表</Title>
+                    <Button Type="@ButtonType.Primary" OnClick="ShowAddRuleDrawer">
+                        <Icon Type="plus" Theme="@IconThemeType.Outline"></Icon>
+                        新增规则
+                    </Button>
+                </div>
+
+                <Table TItem="AlertRule"
+                       DataSource="@alertRules"
+                       Loading="@loading"
+                       Bordered>
+                    <PropertyColumn Property="r => r.Name" Title="规则名称" />
+                    <Column Title="关联账号" TData="string">
+                        @if (context.CloudAccount != null)
+                        {
+                            <span>@context.CloudAccount.Name</span>
+                        }
+                        else
+                        {
+                            <Tag Color="@("blue")">全局规则</Tag>
+                        }
+                    </Column>
+                    <PropertyColumn Property="r => r.Threshold" Title="阈值">
+                        <span>@context.Threshold.ToString("N2") 元</span>
+                    </PropertyColumn>
+                    <Column Title="余额类型" TData="string">
+                        @if (context.BalanceType == "total")
+                        {
+                            <Tag Color="@("blue")">总可用余额</Tag>
+                        }
+                        else
+                        {
+                            <Tag Color="@("green")">现金余额</Tag>
+                        }
+                    </Column>
+                    <Column Title="重复通知" TData="string">
+                        @if (context.RepeatNotificationInterval > 0)
+                        {
+                            <span>
+                                每 @context.RepeatNotificationInterval 分钟
+                                @if (context.MaxRepeatCount.HasValue)
+                                {
+                                    <span>（最多@context.MaxRepeatCount次）</span>
+                                }
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color: rgba(0, 0, 0, 0.45);">不重复</span>
+                        }
+                    </Column>
+                    <Column Title="确认静默" TData="string">
+                        @{
+                            var d = context.AcknowledgeSnoozeDuration;
+                            var snoozeText = d == 0 ? "永久" : d < 60 ? $"{d}分钟" : d % 60 == 0 ? $"{d / 60}小时" : $"{d / 60}h{d % 60}m";
+                        }
+                        @if (context.ContinuousSnooze)
+                        {
+                            <Tooltip Title="@($"持续静默：每次{snoozeText}通知一次，循环静默")">
+                                <Tag Color="@("purple")">@snoozeText · 持续</Tag>
+                            </Tooltip>
+                        }
+                        else
+                        {
+                            <Tooltip Title="@($"静默{snoozeText}后恢复按重复间隔提醒")">
+                                <Tag Color="@("default")">@snoozeText</Tag>
+                            </Tooltip>
+                        }
+                    </Column>
+                    <PropertyColumn Property="r => r.ComparisonOperator" Title="条件">
+                        @if (context.ComparisonOperator == "less_than")
+                        {
+                            <span>余额 &lt; 阈值</span>
+                        }
+                        else
+                        {
+                            <span>余额 &lt;= 阈值</span>
+                        }
+                    </PropertyColumn>
+                    <PropertyColumn Property="r => r.IsEnabled" Title="状态">
+                        @if (context.IsEnabled)
+                        {
+                            <Tag Color="@("success")">启用</Tag>
+                        }
+                        else
+                        {
+                            <Tag Color="@("error")">禁用</Tag>
+                        }
+                    </PropertyColumn>
+                    <ActionColumn Title="操作">
+                        <Space>
+                            <SpaceItem>
+                                <Button Type="@ButtonType.Link" OnClick="() => ShowEditRuleDrawer(context)">编辑</Button>
+                            </SpaceItem>
+                            <SpaceItem>
+                                <Popconfirm Title="确定要删除这个规则吗？"
+                                            OnConfirm="() => DeleteRule(context.Id)">
+                                    <Button Type="@ButtonType.Link" Danger>删除</Button>
+                                </Popconfirm>
+                            </SpaceItem>
+                        </Space>
+                    </ActionColumn>
+                </Table>
+            </div>
+        </div>
+    </TabPane>
+
+    <TabPane Key="2" Tab="预警历史">
+        <div class="tab-content">
+            @* 筛选和操作栏 *@
+            <div class="filter-bar">
+                <Space>
+                    <SpaceItem>
+                        <Text Strong>状态筛选：</Text>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <RadioGroup Value="@statusFilter" ValueChanged="@(async (string value) => await OnStatusFilterChange(value))">
+                            <Radio Value="@("")">全部</Radio>
+                            <Radio Value="@("triggered")">已触发</Radio>
+                            <Radio Value="@("notified")">已通知</Radio>
+                            <Radio Value="@("acknowledged")">已确认</Radio>
+                            <Radio Value="@("resolved")">已解决</Radio>
+                        </RadioGroup>
+                    </SpaceItem>
+                </Space>
+                <Button OnClick="LoadAlertHistories" Icon="reload">刷新</Button>
+            </div>
+
+            @* 预警历史表格 *@
+            <div class="table-section">
+                <Table TItem="AlertHistory"
+                       DataSource="@alertHistories"
+                       Loading="@loadingHistories"
+                       Bordered>
+                    <PropertyColumn Property="h => h.TriggeredAt" Title="触发时间">
+                        @context.TriggeredAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                    </PropertyColumn>
+                    <Column Title="云账号" TData="string">
+                        @(context.CloudAccount?.Name ?? "-")
+                    </Column>
+                    <Column Title="预警规则" TData="string">
+                        @(context.AlertRule?.Name ?? "-")
+                    </Column>
+                    <PropertyColumn Property="h => h.ActualAmount" Title="实际余额">
+                        @context.ActualAmount.ToString("N2") 元
+                    </PropertyColumn>
+                    <PropertyColumn Property="h => h.ThresholdAmount" Title="预警阈值">
+                        @context.ThresholdAmount.ToString("N2") 元
+                    </PropertyColumn>
+                    <PropertyColumn Property="h => h.ExceedPercentage" Title="偏差">
+                        @if (context.ThresholdAmount > 0)
+                        {
+                            var percentage = ((context.ThresholdAmount - context.ActualAmount) / context.ThresholdAmount) * 100;
+                            <span>@percentage.ToString("N1")%</span>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </PropertyColumn>
+                    <PropertyColumn Property="h => h.RepeatNotificationCount" Title="重复通知">
+                        @if (context.RepeatNotificationCount > 0)
+                        {
+                            <Tag Color="@("orange")">@context.RepeatNotificationCount 次</Tag>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </PropertyColumn>
+                    <PropertyColumn Property="h => h.Status" Title="状态">
+                        @if (context.Status == "triggered")
+                        {
+                            <Tag Color="@("orange")">已触发</Tag>
+                        }
+                        else if (context.Status == "notified")
+                        {
+                            <Tag Color="@("green")">已通知</Tag>
+                        }
+                        else if (context.Status == "acknowledged")
+                        {
+                            <Tag Color="@("blue")">已确认</Tag>
+                        }
+                        else if (context.Status == "resolved")
+                        {
+                            <Tag Color="@("default")">已解决</Tag>
+                        }
+                        else
+                        {
+                            <Tag>@context.Status</Tag>
+                        }
+                    </PropertyColumn>
+                    <PropertyColumn Property="h => h.NotificationSent" Title="通知">
+                        @if (context.NotificationSent)
+                        {
+                            <Icon Type="check-circle" Theme="@IconThemeType.TwoTone" TwoToneColor="#52c41a" />
+                        }
+                        else
+                        {
+                            <Icon Type="close-circle" Theme="@IconThemeType.TwoTone" TwoToneColor="#ff4d4f" />
+                        }
+                    </PropertyColumn>
+                    <ActionColumn Title="操作">
+                        <Space>
+                            @if (context.Status != "acknowledged" && context.Status != "resolved")
+                            {
+                                <SpaceItem>
+                                    <Tooltip Title="@GetAcknowledgeTooltip(context)">
+                                        <Button Size="@ButtonSize.Small" OnClick="() => AcknowledgeAlert(context.Id)">确认</Button>
+                                    </Tooltip>
+                                </SpaceItem>
+                            }
+                            @if (context.Status != "resolved")
+                            {
+                                <SpaceItem>
+                                    <Button Size="@ButtonSize.Small" Type="@ButtonType.Primary" OnClick="() => ResolveAlert(context.Id)">解决</Button>
+                                </SpaceItem>
+                            }
+                        </Space>
+                    </ActionColumn>
+                </Table>
+            </div>
+        </div>
+    </TabPane>
+</Tabs>
+</div>
+</div>
+
+<Drawer Width="480"
+        Closable="true"
+        @bind-Visible="@drawerVisible"
+        Title="@drawerTitle"
+        Placement="@DrawerPlacement.Right">
+    <Form Model="@currentRule" Class="drawer-form">
+        <FormItem Label="规则名称">
+            <Input @bind-Value="@currentRule.Name" Placeholder="例如：火山云余额预警" />
+        </FormItem>
+        <FormItem Label="关联账号">
+            <Select TItemValue="int?" TItem="CloudAccount"
+                    @bind-Value="@currentRule.CloudAccountId"
+                    AllowClear
+                    Placeholder="留空表示全局规则"
+                    DataSource="@accounts"
+                    LabelName="@nameof(CloudAccount.Name)"
+                    ValueName="@nameof(CloudAccount.Id)">
+            </Select>
+        </FormItem>
+        <FormItem Label="预警阈值（元）">
+            <AntDesign.InputNumber @bind-Value="@currentRule.Threshold" Min="0" Step="100" Placeholder="100.00" />
+        </FormItem>
+        <FormItem Label="余额类型">
+            <RadioGroup @bind-Value="@currentRule.BalanceType">
+                <Radio Value="@("available")">现金余额</Radio>
+                <Radio Value="@("total")">总可用余额</Radio>
+            </RadioGroup>
+        </FormItem>
+        <FormItem Label="触发条件">
+            <RadioGroup @bind-Value="@currentRule.ComparisonOperator">
+                <Radio Value="@("less_than")">余额小于阈值</Radio>
+                <Radio Value="@("less_than_or_equal")">余额小于等于阈值</Radio>
+            </RadioGroup>
+        </FormItem>
+        <FormItem Label="通知配置">
+            <Select Mode="SelectMode.Multiple"
+                    TItemValue="int"
+                    TItem="int"
+                    @bind-Values="@selectedNotificationConfigIds"
+                    Placeholder="请选择通知配置"
+                    AllowClear>
+                <SelectOptions>
+                    @foreach (var config in notificationConfigs)
+                    {
+                        <SelectOption TItemValue="int" TItem="int" Value="@config.Id" Label="@GetNotificationConfigDisplayName(config)" />
+                    }
+                </SelectOptions>
+            </Select>
+        </FormItem>
+        <FormItem Label="启用状态">
+            <Switch @bind-Value="@currentRule.IsEnabled" />
+        </FormItem>
+        <FormItem Label="重复通知间隔">
+            <AntDesign.InputNumber @bind-Value="@currentRule.RepeatNotificationInterval" Min="0" Step="60" Style="width:140px" />
+            <span style="margin-left:8px;color:#888">分钟（0 = 触发后只通知一次）</span>
+        </FormItem>
+        <FormItem Label="最大重复次数">
+            <AntDesign.InputNumber TValue="int?"
+                                   Value="@currentRule.MaxRepeatCount"
+                                   ValueChanged="@(v => currentRule.MaxRepeatCount = v)"
+                                   Min="1" Step="1" Style="width:140px"
+                                   Disabled="@(currentRule.RepeatNotificationInterval <= 0)" />
+            <span style="margin-left:8px;color:#888">留空 = 不限次数</span>
+        </FormItem>
+        @{
+            var snoozeDisabled = currentRule.RepeatNotificationInterval <= 0;
+        }
+        <FormItem Label="确认后静默时长">
+            <AntDesign.InputNumber @bind-Value="@currentRule.AcknowledgeSnoozeDuration"
+                                   Min="0" Step="60" Style="width:140px"
+                                   Disabled="@snoozeDisabled" />
+            <span style="margin-left:8px;color:#888">
+                @if (snoozeDisabled)
+                {
+                    <span style="color:#faad14">需先设置"重复通知间隔"才可使用</span>
+                }
+                else
+                {
+                    <span>分钟（0 = 永久静默，直到余额恢复）</span>
+                }
+            </span>
+        </FormItem>
+        <FormItem Label="持续静默">
+            <Switch @bind-Value="@currentRule.ContinuousSnooze" Disabled="@snoozeDisabled" />
+            @if (!snoozeDisabled)
+            {
+                <span style="margin-left:8px;color:#888">
+                    @if (currentRule.ContinuousSnooze)
+                    {
+                        <span>开启：静默到期后发一次通知，自动进入下一个静默周期</span>
+                    }
+                    else
+                    {
+                        <span>关闭：静默到期后恢复按"重复通知间隔"提醒</span>
+                    }
+                </span>
+            }
+        </FormItem>
+        <FormItem Label="备注">
+            <TextArea @bind-Value="@currentRule.Remark" Rows="3" Placeholder="请输入备注信息（可选）" />
+        </FormItem>
+    </Form>
+    <div class="drawer-footer">
+        <Button OnClick="CloseDrawer">取消</Button>
+        <Button Type="@ButtonType.Primary" OnClick="SaveRule">保存</Button>
+    </div>
+</Drawer>
+
+@code {
+    private bool loading = false;
+    private bool drawerVisible = false;
+    private string drawerTitle = "";
+    private AlertRule currentRule = new();
+    private IEnumerable<int> selectedNotificationConfigIds = new List<int>();
+    private List<FeeQuery.Shared.Models.NotificationConfig> notificationConfigs = new();
+    private List<AlertRule> alertRules = new();
+    private List<CloudAccount> accounts = new();
+    private string activeTab = "1";
+    private List<AlertHistory> alertHistories = new();
+    private bool loadingHistories = false;
+    private string statusFilter = "";
+    private int triggeredCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private void OnTabChange(string key)
+    {
+        activeTab = key;
+        if (key == "2" && alertHistories.Count == 0)
+        {
+            _ = LoadAlertHistories();
+        }
+    }
+
+    private async Task OnStatusFilterChange(string value)
+    {
+        statusFilter = value;
+        await LoadAlertHistories();
+    }
+
+    private async Task LoadAlertHistories()
+    {
+        loadingHistories = true;
+        try
+        {
+            var query = DbContext.AlertHistories
+                .Include(h => h.CloudAccount)
+                .Include(h => h.AlertRule)
+                .AsQueryable();
+
+            // 应用状态筛选
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                query = query.Where(h => h.Status == statusFilter);
+            }
+
+            alertHistories = await query
+                .OrderByDescending(h => h.TriggeredAt)
+                .Take(100)
+                .ToListAsync();
+        }
+        finally
+        {
+            loadingHistories = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        try
+        {
+            accounts = await DbContext.CloudAccounts.ToListAsync();
+            notificationConfigs = await DbContext.NotificationConfigs
+                .OrderBy(c => c.ChannelType)
+                .ThenBy(c => c.Name)
+                .ToListAsync();
+            alertRules = await DbContext.AlertRules
+                .Include(r => r.CloudAccount)
+                .Where(r => r.AlertType == "balance")
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            // 加载已触发的预警数量
+            triggeredCount = await DbContext.AlertHistories
+                .Where(h => h.Status == "triggered" || h.Status == "notified")
+                .CountAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowAddRuleDrawer()
+    {
+        drawerTitle = "添加预警规则";
+        currentRule = new AlertRule
+        {
+            AlertType = "balance",
+            ComparisonOperator = "less_than",
+            BalanceType = "available", // 默认检查现金余额
+            PeriodType = "daily",
+            NotificationConfigIds = string.Empty,
+            IsEnabled = true
+        };
+        selectedNotificationConfigIds = new List<int>();
+        drawerVisible = true;
+    }
+
+    private void ShowEditRuleDrawer(AlertRule rule)
+    {
+        drawerTitle = "编辑预警规则";
+        currentRule = rule;
+
+        // 从 NotificationConfigIds 字符串解析为 ID 列表
+        if (!string.IsNullOrEmpty(rule.NotificationConfigIds))
+        {
+            selectedNotificationConfigIds = rule.NotificationConfigIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(int.Parse)
+                .ToList();
+        }
+        else
+        {
+            selectedNotificationConfigIds = new List<int>();
+        }
+
+        drawerVisible = true;
+    }
+
+    private void CloseDrawer()
+    {
+        drawerVisible = false;
+    }
+
+    private string GetAcknowledgeTooltip(AlertHistory alert)
+    {
+        var duration = alert.AlertRule?.AcknowledgeSnoozeDuration ?? 480;
+        var continuous = alert.AlertRule?.ContinuousSnooze ?? false;
+
+        string durationText;
+        if (duration == 0)
+            return "确认后将永久静默通知，直到余额恢复或手动解决。";
+        else if (duration < 60)
+            durationText = $"{duration} 分钟";
+        else
+        {
+            var hours = duration / 60;
+            var minutes = duration % 60;
+            durationText = minutes == 0 ? $"{hours} 小时" : $"{hours} 小时 {minutes} 分钟";
+        }
+
+        if (continuous)
+            return $"确认后将静默 {durationText}，到期后发一次通知并自动进入下一个静默周期（持续静默模式）。";
+        else
+            return $"确认后将静默 {durationText}，到期后恢复按重复通知间隔提醒。若余额降至 ¥0 以下，静默期将被自动忽略。";
+    }
+
+    private async Task SaveRule()
+    {
+        var remark = currentRule.Id == 0
+            ? $"新建告警规则「{currentRule.Name}」"
+            : $"更新告警规则「{currentRule.Name}」";
+        try
+        {
+            // 将选中的通知配置ID列表转换为逗号分隔的字符串
+            currentRule.NotificationConfigIds = string.Join(",", selectedNotificationConfigIds);
+
+            // RepeatNotificationInterval=0 时静默字段无意义，重置为默认值避免混淆
+            if (currentRule.RepeatNotificationInterval <= 0)
+            {
+                currentRule.AcknowledgeSnoozeDuration = 480;
+                currentRule.ContinuousSnooze = false;
+                currentRule.MaxRepeatCount = null;
+            }
+
+            if (currentRule.Id == 0)
+            {
+                DbContext.AlertRules.Add(currentRule);
+            }
+            else
+            {
+                currentRule.UpdatedAt = DateTime.UtcNow;
+                DbContext.AlertRules.Update(currentRule);
+            }
+
+            await DbContext.SaveChangesAsync();
+            await LoadData();
+            CloseDrawer();
+            Message.Success("保存成功");
+            await BackupService.CreateAutoConfigBackupAsync(remark);
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"保存失败: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteRule(int id)
+    {
+        try
+        {
+            var rule = await DbContext.AlertRules.FindAsync(id);
+            if (rule != null)
+            {
+                var ruleName = rule.Name;
+                DbContext.AlertRules.Remove(rule);
+                await DbContext.SaveChangesAsync();
+                await LoadData();
+                Message.Success("删除成功");
+                await BackupService.CreateAutoConfigBackupAsync($"删除告警规则「{ruleName}」");
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"删除失败: {ex.Message}");
+        }
+    }
+
+    private async Task AcknowledgeAlert(long alertId)
+    {
+        try
+        {
+            await BalanceAlertService.AcknowledgeAlertAsync(alertId);
+            await LoadAlertHistories();
+            Message.Success("预警已确认");
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"确认失败: {ex.Message}");
+        }
+    }
+
+    private async Task ResolveAlert(long alertId)
+    {
+        try
+        {
+            await BalanceAlertService.ResolveAlertAsync(alertId);
+            await LoadAlertHistories();
+            Message.Success("预警已解决");
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"解决失败: {ex.Message}");
+        }
+    }
+
+    private string GetNotificationConfigDisplayName(FeeQuery.Shared.Models.NotificationConfig config)
+    {
+        var channelTypeDisplay = config.ChannelType switch
+        {
+            "email" => "邮件",
+            "dingtalk" => "钉钉",
+            _ => config.ChannelType
+        };
+
+        var statusDisplay = config.IsEnabled ? "" : " (已禁用)";
+        return $"{config.Name} [{channelTypeDisplay}]{statusDisplay}";
+    }
+}

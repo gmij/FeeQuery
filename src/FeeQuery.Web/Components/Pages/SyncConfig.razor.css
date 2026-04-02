@@ -1,0 +1,302 @@
+/* 同步配置管理页面样式 */
+
+/* 页面容器 */
+.sync-config-page {
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    width: 100%;
+    animation: fadeIn 0.15s ease-in;
+}
+
+.sync-config-content {
+    padding: 40px;
+}
+
+/* 页面头部 */
+.sync-config-page ::deep .ant-page-header {
+    padding: 40px 40px 0 40px;
+    background: transparent;
+}
+
+.sync-config-page ::deep .page-header-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0;
+}
+
+.sync-config-page ::deep .page-header-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #71717A;
+    margin-top: 8px;
+}
+
+/* Tabs 样式 */
+.sync-config-page ::deep .ant-tabs {
+    font-family: 'Inter', sans-serif;
+}
+
+.sync-config-page ::deep .ant-tabs-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: #71717A;
+}
+
+.sync-config-page ::deep .ant-tabs-tab-active {
+    color: #8B5CF6 !important;
+}
+
+.sync-config-page ::deep .ant-tabs-ink-bar {
+    background-color: #8B5CF6 !important;
+}
+
+/* 标签内容区域 */
+.sync-config-page ::deep .tab-content {
+    padding: 24px 0;
+}
+
+/* Alert 样式 */
+.sync-config-page ::deep .ant-alert {
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 16px;
+}
+
+/* 表格区域 */
+.sync-config-page ::deep .table-section {
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* 表格样式 */
+.sync-config-page ::deep .ant-table {
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.sync-config-page ::deep .ant-table-thead > tr > th {
+    background-color: #F4F4F5;
+    border-bottom: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #71717A;
+    padding: 16px;
+}
+
+.sync-config-page ::deep .ant-table-tbody > tr > td {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #18181B;
+    padding: 16px;
+    border-bottom: 1px solid #E4E4E7;
+}
+
+.sync-config-page ::deep .ant-table-tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+/* 次要文本 */
+.sync-config-page ::deep .secondary-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #71717A;
+}
+
+/* 操作按钮组 */
+.sync-config-page ::deep .action-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* 操作链接 */
+.sync-config-page ::deep .action-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8B5CF6;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sync-config-page ::deep .action-link:hover {
+    color: #7C3AED;
+    text-decoration: underline;
+}
+
+/* 标签样式 */
+.sync-config-page ::deep .ant-tag {
+    border: none;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* 卡片样式 */
+.sync-config-page ::deep .ant-card {
+    border-radius: 24px;
+    border: 1px solid #E4E4E7;
+}
+
+.sync-config-page ::deep .ant-card-head {
+    border-bottom: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+}
+
+.sync-config-page ::deep .ant-card-head-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #18181B;
+}
+
+/* 表单样式 */
+.sync-config-page ::deep .ant-form-item-label > label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #18181B;
+}
+
+.sync-config-page ::deep .form-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #71717A;
+    margin-top: 8px;
+}
+
+.sync-config-page ::deep .ant-input,
+.sync-config-page ::deep .ant-input-number,
+.sync-config-page ::deep .ant-input-textarea {
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+/* 开关样式 */
+.sync-config-page ::deep .ant-switch {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Empty 状态 */
+.sync-config-page ::deep .empty-state {
+    padding: 40px 0;
+}
+
+.sync-config-page ::deep .empty-state .ant-empty-description {
+    font-family: 'Inter', sans-serif;
+    color: #71717A;
+}
+
+/* 批量操作区域 */
+.sync-config-page ::deep .batch-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sync-config-page ::deep .batch-actions .ant-btn {
+    width: fit-content;
+}
+
+/* 按钮样式 */
+.sync-config-page ::deep .ant-btn {
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.sync-config-page ::deep .ant-btn-primary {
+    height: 40px;
+    padding: 0 16px;
+}
+
+/* Drawer 样式 */
+.sync-config-page ::deep .ant-drawer-header {
+    border-bottom: 1px solid #E4E4E7;
+}
+
+.sync-config-page ::deep .ant-drawer-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #18181B;
+}
+
+/* Drawer 表单 */
+.sync-config-page ::deep .drawer-form .ant-form-item-label > label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #18181B;
+}
+
+.sync-config-page ::deep .drawer-form .ant-input,
+.sync-config-page ::deep .drawer-form .ant-input-textarea {
+    border-radius: 8px;
+    background-color: #F9FAFB;
+    border: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+/* Drawer 底部按钮 */
+.sync-config-page ::deep .drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #E4E4E7;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #FFFFFF;
+}
+
+.sync-config-page ::deep .drawer-footer .ant-btn {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .sync-config-content {
+        padding: 24px 16px;
+    }
+
+    .sync-config-page ::deep .ant-page-header {
+        padding: 24px 16px 0 16px;
+    }
+
+    .sync-config-page ::deep .page-header-title {
+        font-size: 24px;
+    }
+
+    .sync-config-page ::deep .batch-actions {
+        align-items: stretch;
+    }
+
+    .sync-config-page ::deep .batch-actions .ant-btn {
+        width: 100%;
+    }
+
+    .sync-config-page ::deep .action-buttons {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

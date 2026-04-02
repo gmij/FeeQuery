@@ -1,0 +1,569 @@
+@page "/notification-settings"
+@rendermode InteractiveServer
+@using AntDesign.TableModels
+@using FeeQuery.Core.Services
+@using NotificationConfigModel = FeeQuery.Shared.Models.NotificationConfig
+@inject FeeQuery.Core.Services.NotificationService NotificationService
+@inject BackupService BackupService
+@inject IMessageService Message
+
+
+<div class="notification-settings-page">
+<PageHeader Class="ant-page-header">
+    <PageHeaderTitle>
+        <div class="page-header-title">通知配置管理</div>
+    </PageHeaderTitle>
+    <PageHeaderSubtitle>
+        <div class="page-header-subtitle">配置邮件、钉钉等通知渠道</div>
+    </PageHeaderSubtitle>
+</PageHeader>
+
+<div class="notification-settings-content">
+
+<div class="table-section">
+    <div class="table-header">
+        <h2 class="table-title">通知配置列表</h2>
+        <Button Type="@ButtonType.Primary" OnClick="ShowAddDrawer">
+            <Icon Type="plus" Theme="@IconThemeType.Outline"></Icon>
+            添加通知配置
+        </Button>
+    </div>
+
+    <Table TItem="NotificationConfigModel"
+               DataSource="@configs"
+               Loading="@loading"
+               Bordered
+               RowClassName="@GetRowClassName">
+            <PropertyColumn Property="c => c.Name" Title="配置名称" />
+            <PropertyColumn Property="c => c.ChannelType" Title="通知类型">
+                @if (context.ChannelType == "email")
+                {
+                    <Tag Color="@("blue")"><Icon Type="mail" /> 邮件</Tag>
+                }
+                else if (context.ChannelType == "dingtalk")
+                {
+                    <Tag Color="@("green")"><Icon Type="dingding" /> 钉钉</Tag>
+                }
+                else
+                {
+                    <Tag>@context.ChannelType</Tag>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.IsDefault" Title="默认">
+                @if (context.IsDefault)
+                {
+                    <Icon Type="check-circle" Theme="@IconThemeType.TwoTone" TwoToneColor="#52c41a" />
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.IsEnabled" Title="状态">
+                @if (context.IsEnabled)
+                {
+                    <div class="status-badge status-badge-success">已启用</div>
+                }
+                else
+                {
+                    <div class="status-badge status-badge-error">已禁用</div>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.LastTestAt" Title="最后测试">
+                @if (context.LastTestAt.HasValue)
+                {
+                    <span>@context.LastTestAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                }
+                else
+                {
+                    <span><Text Type="@TextElementType.Secondary">从未测试</Text></span>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.LastTestSuccess" Title="测试结果">
+                @if (context.LastTestSuccess == true)
+                {
+                    <Tag Color="@("green")"><Icon Type="check" /> 成功</Tag>
+                }
+                else if (context.LastTestSuccess == false)
+                {
+                    <Space Direction="@SpaceDirection.Vertical" Size="@("0")">
+                        <SpaceItem>
+                            <Tag Color="@("red")"><Icon Type="close" /> 失败</Tag>
+                        </SpaceItem>
+                        @if (!string.IsNullOrEmpty(context.LastTestError))
+                        {
+                            <SpaceItem>
+                                <Tooltip Title="@context.LastTestError">
+                                    <div class="error-text">
+                                        <Icon Type="exclamation-circle" /> 查看错误
+                                    </div>
+                                </Tooltip>
+                            </SpaceItem>
+                        }
+                    </Space>
+                }
+                else
+                {
+                    <Tag Color="@("default")">未测试</Tag>
+                }
+            </PropertyColumn>
+            <ActionColumn Title="操作">
+                <div class="action-buttons">
+                    <Button Size="@ButtonSize.Small"
+                            OnClick="() => TestConfig(context.Id)"
+                            Loading="@(testingConfigId == context.Id)">
+                        <Icon Type="experiment" /> 测试
+                    </Button>
+                    <a class="action-link" @onclick="() => ShowEditDrawer(context)">编辑</a>
+                    <Popconfirm Title="确定要删除这个配置吗？"
+                                OnConfirm="() => DeleteConfig(context.Id)">
+                        <a class="action-link action-link-danger">删除</a>
+                    </Popconfirm>
+                </div>
+            </ActionColumn>
+        </Table>
+    </div>
+</div>
+</div>
+
+<Drawer Width="480"
+        Closable="true"
+        @bind-Visible="@drawerVisible"
+        Title="@drawerTitle"
+        Placement="@DrawerPlacement.Right">
+
+    @if (currentConfig != null)
+    {
+        <Form Model="@currentConfig" Class="drawer-form" LabelColSpan="6" WrapperColSpan="18">
+            <FormItem Label="配置名称">
+                <Input @bind-Value="@currentConfig.Name" Placeholder="例如：公司邮箱、运维钉钉群" />
+            </FormItem>
+
+            <FormItem Label="通知类型">
+                <Select TItemValue="string" TItem="string"
+                        @bind-Value="@currentConfig.ChannelType"
+                        Disabled="@(!isNewConfig)">
+                    <SelectOptions>
+                        <SelectOption TItemValue="string" TItem="string" Value="@("email")" Label="邮件通知" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("dingtalk")" Label="钉钉通知" />
+                    </SelectOptions>
+                </Select>
+                @if (!isNewConfig)
+                {
+                    <div class="ant-form-item-explain ant-form-item-explain-connected">
+                        <div class="ant-form-item-explain-error">类型不可修改</div>
+                    </div>
+                }
+            </FormItem>
+
+            @if (currentConfig.ChannelType == "email")
+            {
+                <Divider>邮件配置</Divider>
+                <FormItem Label="SMTP服务器">
+                    <Input @bind-Value="@emailConfig.SmtpServer" Placeholder="smtp.example.com" />
+                </FormItem>
+                <FormItem Label="端口">
+                    <AntDesign.InputNumber @bind-Value="@emailConfig.Port" Min="1" Max="65535" />
+                </FormItem>
+                <FormItem Label="发件邮箱">
+                    <Input @bind-Value="@emailConfig.From" Placeholder="noreply@example.com" />
+                </FormItem>
+                <FormItem Label="用户名">
+                    <Input @bind-Value="@emailConfig.Username" Placeholder="登录用户名" />
+                </FormItem>
+                <FormItem Label="密码">
+                    <InputPassword @bind-Value="@emailConfig.Password" Placeholder="邮箱密码或授权码" />
+                </FormItem>
+                <FormItem Label="收件人">
+                    <Input @bind-Value="@emailConfig.To" Placeholder="多个收件人用分号分隔" />
+                    <div class="form-hint">多个收件人用分号(;)分隔</div>
+                </FormItem>
+                <FormItem Label="启用SSL">
+                    <Switch @bind-Value="@emailConfig.EnableSsl" />
+                </FormItem>
+            }
+            else if (currentConfig.ChannelType == "dingtalk")
+            {
+                <Divider>钉钉配置</Divider>
+                <FormItem Label="Webhook地址">
+                    <Input @bind-Value="@dingtalkConfig.WebhookUrl"
+                           Placeholder="https://oapi.dingtalk.com/robot/send?access_token=xxx" />
+                    <div class="form-hint">
+                        在钉钉群设置中添加自定义机器人，复制Webhook地址
+                    </div>
+                </FormItem>
+                <FormItem Label="加签密钥">
+                    <InputPassword @bind-Value="@dingtalkConfig.Secret"
+                                   Placeholder="SEC开头的密钥（可选）" />
+                    <div class="form-hint">
+                        如果机器人启用了加签，请填写密钥
+                    </div>
+                </FormItem>
+                <FormItem Label="消息类型">
+                    <RadioGroup @bind-Value="@dingtalkConfig.MessageType">
+                        <Radio RadioButton Value="@("text")">文本消息</Radio>
+                        <Radio RadioButton Value="@("actionCard")">互动消息</Radio>
+                    </RadioGroup>
+                    <div class="form-hint">
+                        互动消息支持添加可点击的按钮
+                    </div>
+                </FormItem>
+
+                @if (dingtalkConfig.MessageType == "text")
+                {
+                    <FormItem Label='@("@所有人")'>
+                        <Switch @bind-Value="@dingtalkConfig.AtAll" />
+                    </FormItem>
+                }
+                else if (dingtalkConfig.MessageType == "actionCard")
+                {
+                    <FormItem Label="按钮配置">
+                        <Space Direction="@SpaceDirection.Vertical" Class="button-config-space">
+                            @for (int i = 0; i < dingtalkConfig.Buttons.Count; i++)
+                            {
+                                var index = i;
+                                var button = dingtalkConfig.Buttons[i];
+                                <SpaceItem>
+                                    <Card Size="@CardSize.Small" Class="button-config-card">
+                                        <Space Direction="@SpaceDirection.Vertical" Class="button-config-inner" Size="@("small")">
+                                            <SpaceItem>
+                                                <Space Class="button-config-header">
+                                                    <SpaceItem>
+                                                        <Text Strong>按钮 @(index + 1)</Text>
+                                                    </SpaceItem>
+                                                    <SpaceItem Class="button-config-delete">
+                                                        <Button Size="@ButtonSize.Small"
+                                                                Danger
+                                                                OnClick="() => RemoveButton(index)">
+                                                            <Icon Type="delete" /> 删除
+                                                        </Button>
+                                                    </SpaceItem>
+                                                </Space>
+                                            </SpaceItem>
+                                            <SpaceItem>
+                                                <Space Direction="@SpaceDirection.Vertical" Class="button-input-group" Size="@("small")">
+                                                    <SpaceItem>
+                                                        <Text>按钮文本：</Text>
+                                                    </SpaceItem>
+                                                    <SpaceItem>
+                                                        <Input @bind-Value="@button.Title"
+                                                               Placeholder="按钮文本" />
+                                                    </SpaceItem>
+                                                </Space>
+                                            </SpaceItem>
+                                            <SpaceItem>
+                                                <Space Direction="@SpaceDirection.Vertical" Class="button-input-group" Size="@("small")">
+                                                    <SpaceItem>
+                                                        <Text>回调地址：</Text>
+                                                    </SpaceItem>
+                                                    <SpaceItem>
+                                                        <Input @bind-Value="@button.ActionUrl"
+                                                               Placeholder="https://example.com/callback" />
+                                                    </SpaceItem>
+                                                </Space>
+                                            </SpaceItem>
+                                        </Space>
+                                    </Card>
+                                </SpaceItem>
+                            }
+                            <SpaceItem>
+                                <Button Type="@ButtonType.Dashed" Block OnClick="AddButton">
+                                    <Icon Type="plus" /> 添加按钮
+                                </Button>
+                            </SpaceItem>
+                        </Space>
+                        <div class="form-hint">
+                            每个按钮需要配置按钮文本和点击后的回调URL
+                        </div>
+                    </FormItem>
+                }
+            }
+
+            <Divider />
+
+            <FormItem Label="设为默认">
+                <Switch @bind-Value="@currentConfig.IsDefault" />
+                <div class="form-hint">
+                    设为默认后，新建预警规则时会自动使用此配置
+                </div>
+            </FormItem>
+
+            <FormItem Label="是否启用">
+                <Switch @bind-Value="@currentConfig.IsEnabled" />
+            </FormItem>
+
+            <FormItem Label="备注">
+                <TextArea @bind-Value="@currentConfig.Remark" Rows="2" />
+            </FormItem>
+        </Form>
+
+        <div class="drawer-footer">
+            <Button OnClick="CloseDrawer">取消</Button>
+            <Button OnClick="TestCurrentConfig" Loading="@testing">
+                <Icon Type="experiment" /> 保存并测试
+            </Button>
+            <Button Type="@ButtonType.Primary" OnClick="SaveConfig" Loading="@saving">
+                保存
+            </Button>
+        </div>
+    }
+</Drawer>
+
+@code {
+    private List<NotificationConfigModel> configs = new();
+    private bool loading = false;
+    private bool drawerVisible = false;
+    private bool saving = false;
+    private bool testing = false;
+    private int? testingConfigId = null;
+    private string drawerTitle = "";
+    private bool isNewConfig = false;
+    private NotificationConfigModel? currentConfig = null;
+
+    // 邮件配置
+    private EmailConfigModel emailConfig = new();
+
+    // 钉钉配置
+    private DingTalkConfigModel dingtalkConfig = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfigs();
+    }
+
+    private async Task LoadConfigs()
+    {
+        loading = true;
+        try
+        {
+            configs = await NotificationService.GetAllConfigsAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    // 根据测试状态返回行样式类名
+    private string GetRowClassName(RowData<NotificationConfigModel> row)
+    {
+        if (row.Data.LastTestSuccess == false)
+        {
+            return "test-failed-row";
+        }
+        return "";
+    }
+
+    private void ShowAddDrawer()
+    {
+        drawerTitle = "添加通知配置";
+        isNewConfig = true;
+        currentConfig = new NotificationConfigModel { ChannelType = "email" };
+        emailConfig = new EmailConfigModel();
+        dingtalkConfig = new DingTalkConfigModel();
+        drawerVisible = true;
+    }
+
+    private void ShowEditDrawer(NotificationConfigModel config)
+    {
+        drawerTitle = "编辑通知配置";
+        isNewConfig = false;
+        currentConfig = config;
+
+        // 解析现有配置
+        if (config.ChannelType == "email")
+        {
+            emailConfig = System.Text.Json.JsonSerializer.Deserialize<EmailConfigModel>(config.ConfigJson)
+                ?? new EmailConfigModel();
+        }
+        else if (config.ChannelType == "dingtalk")
+        {
+            dingtalkConfig = System.Text.Json.JsonSerializer.Deserialize<DingTalkConfigModel>(config.ConfigJson)
+                ?? new DingTalkConfigModel();
+        }
+
+        drawerVisible = true;
+    }
+
+    private void CloseDrawer()
+    {
+        drawerVisible = false;
+    }
+
+    private async Task SaveConfig()
+    {
+        if (currentConfig == null) return;
+
+        var remark = isNewConfig
+            ? $"新建通知配置「{currentConfig.Name}」"
+            : $"更新通知配置「{currentConfig.Name}」";
+        saving = true;
+        try
+        {
+            // 根据类型序列化配置
+            if (currentConfig.ChannelType == "email")
+            {
+                currentConfig.ConfigJson = System.Text.Json.JsonSerializer.Serialize(emailConfig);
+            }
+            else if (currentConfig.ChannelType == "dingtalk")
+            {
+                currentConfig.ConfigJson = System.Text.Json.JsonSerializer.Serialize(dingtalkConfig);
+            }
+
+            if (isNewConfig)
+            {
+                await NotificationService.AddConfigAsync(currentConfig);
+            }
+            else
+            {
+                await NotificationService.UpdateConfigAsync(currentConfig);
+            }
+
+            await LoadConfigs();
+            CloseDrawer();
+            Message.Success("保存成功");
+            await BackupService.CreateAutoConfigBackupAsync(remark);
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"保存失败: {ex.Message}");
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task TestCurrentConfig()
+    {
+        if (currentConfig == null) return;
+
+        testing = true;
+        try
+        {
+            // 先保存
+            await SaveConfig();
+
+            if (currentConfig.Id > 0)
+            {
+                // 测试配置
+                var success = await NotificationService.TestNotificationConfigAsync(currentConfig.Id);
+
+                // 刷新配置列表以获取最新的错误信息
+                await LoadConfigs();
+
+                // 查找更新后的配置
+                var updatedConfig = configs.FirstOrDefault(c => c.Id == currentConfig.Id);
+
+                if (success)
+                {
+                    Message.Success("测试成功！请检查是否收到测试通知");
+                }
+                else
+                {
+                    var errorMsg = updatedConfig?.LastTestError ?? "测试失败！请检查配置是否正确";
+                    Message.Error($"测试失败：{errorMsg}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"测试失败: {ex.Message}");
+        }
+        finally
+        {
+            testing = false;
+        }
+    }
+
+    private async Task TestConfig(int configId)
+    {
+        testingConfigId = configId;
+        try
+        {
+            var success = await NotificationService.TestNotificationConfigAsync(configId);
+
+            // 刷新配置列表以获取最新的错误信息
+            await LoadConfigs();
+
+            // 查找配置以获取错误信息
+            var config = configs.FirstOrDefault(c => c.Id == configId);
+
+            if (success)
+            {
+                Message.Success("测试成功！请检查是否收到测试通知");
+            }
+            else
+            {
+                var errorMsg = config?.LastTestError ?? "测试失败！请检查配置是否正确";
+                Message.Error($"测试失败：{errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"测试失败: {ex.Message}");
+        }
+        finally
+        {
+            testingConfigId = null;
+        }
+    }
+
+    private async Task DeleteConfig(int configId)
+    {
+        try
+        {
+            var name = configs.FirstOrDefault(c => c.Id == configId)?.Name ?? configId.ToString();
+            await NotificationService.DeleteConfigAsync(configId);
+            await LoadConfigs();
+            Message.Success("删除成功");
+            await BackupService.CreateAutoConfigBackupAsync($"删除通知配置「{name}」");
+        }
+        catch (Exception ex)
+        {
+            Message.Error($"删除失败: {ex.Message}");
+        }
+    }
+
+    private void AddButton()
+    {
+        dingtalkConfig.Buttons.Add(new DingTalkButton
+        {
+            Title = "",
+            ActionUrl = ""
+        });
+    }
+
+    private void RemoveButton(int index)
+    {
+        if (index >= 0 && index < dingtalkConfig.Buttons.Count)
+        {
+            dingtalkConfig.Buttons.RemoveAt(index);
+        }
+    }
+
+    // 邮件配置模型
+    private class EmailConfigModel
+    {
+        public string SmtpServer { get; set; } = string.Empty;
+        public int Port { get; set; } = 587;
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string From { get; set; } = string.Empty;
+        public string To { get; set; } = string.Empty;
+        public bool EnableSsl { get; set; } = true;
+    }
+
+    // 钉钉配置模型
+    private class DingTalkConfigModel
+    {
+        public string WebhookUrl { get; set; } = string.Empty;
+        public string Secret { get; set; } = string.Empty;
+        public bool AtAll { get; set; } = false;
+        public string MessageType { get; set; } = "text";
+        public List<DingTalkButton> Buttons { get; set; } = new();
+    }
+
+    // 钉钉按钮配置
+    private class DingTalkButton
+    {
+        public string Title { get; set; } = string.Empty;
+        public string ActionUrl { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,334 @@
+/* 通知配置管理页面样式 */
+
+/* 页面容器 */
+.notification-settings-page {
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    width: 100%;
+    animation: fadeIn 0.15s ease-in;
+}
+
+.notification-settings-content {
+    padding: 40px;
+}
+
+/* 页面头部 */
+.notification-settings-page ::deep .ant-page-header {
+    padding: 40px 40px 0 40px;
+    background: transparent;
+}
+
+.notification-settings-page ::deep .page-header-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #18181B;
+    margin: 0;
+}
+
+.notification-settings-page ::deep .page-header-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #71717A;
+    margin-top: 8px;
+}
+
+/* 表格区域 */
+.notification-settings-page ::deep .table-section {
+    width: 100%;
+    margin-top: 24px;
+}
+
+.notification-settings-page ::deep .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.notification-settings-page ::deep .table-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #18181B;
+    margin: 0;
+}
+
+.notification-settings-page ::deep .table-header .ant-btn-primary {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 表格样式 */
+.notification-settings-page ::deep .ant-table {
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.notification-settings-page ::deep .ant-table-thead > tr > th {
+    background-color: #F4F4F5;
+    border-bottom: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #71717A;
+    padding: 16px;
+}
+
+.notification-settings-page ::deep .ant-table-tbody > tr > td {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #18181B;
+    padding: 16px;
+    border-bottom: 1px solid #E4E4E7;
+}
+
+.notification-settings-page ::deep .ant-table-tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+/* 测试失败行高亮 */
+.notification-settings-page ::deep .test-failed-row {
+    background-color: #FEF2F2 !important;
+}
+
+/* 状态徽章 */
+.notification-settings-page ::deep .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.notification-settings-page ::deep .status-badge-success {
+    background-color: #D1FAE5;
+    color: #059669;
+}
+
+.notification-settings-page ::deep .status-badge-error {
+    background-color: #FEE2E2;
+    color: #DC2626;
+}
+
+/* 错误文本 */
+.notification-settings-page ::deep .error-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #DC2626;
+    cursor: pointer;
+}
+
+/* 操作按钮组 */
+.notification-settings-page ::deep .action-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* 操作链接 */
+.notification-settings-page ::deep .action-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8B5CF6;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.notification-settings-page ::deep .action-link:hover {
+    color: #7C3AED;
+    text-decoration: underline;
+}
+
+.notification-settings-page ::deep .action-link-danger {
+    color: #DC2626;
+}
+
+.notification-settings-page ::deep .action-link-danger:hover {
+    color: #B91C1C;
+}
+
+/* 标签样式 */
+.notification-settings-page ::deep .ant-tag {
+    border: none;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 按钮样式 */
+.notification-settings-page ::deep .ant-btn {
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.notification-settings-page ::deep .ant-btn-sm {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
+/* Drawer 样式 */
+.notification-settings-page ::deep .ant-drawer-header {
+    border-bottom: 1px solid #E4E4E7;
+}
+
+.notification-settings-page ::deep .ant-drawer-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #18181B;
+}
+
+/* Drawer 表单 */
+.notification-settings-page ::deep .drawer-form .ant-form-item-label > label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #18181B;
+}
+
+.notification-settings-page ::deep .drawer-form .ant-input,
+.notification-settings-page ::deep .drawer-form .ant-input-number,
+.notification-settings-page ::deep .drawer-form .ant-select-selector,
+.notification-settings-page ::deep .drawer-form .ant-input-textarea,
+.notification-settings-page ::deep .drawer-form .ant-input-password {
+    border-radius: 8px;
+    background-color: #F9FAFB;
+    border: 1px solid #E4E4E7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+/* 表单提示文本 */
+.notification-settings-page ::deep .form-hint {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #71717A;
+    margin-top: 8px;
+}
+
+/* Divider 样式 */
+.notification-settings-page ::deep .ant-divider {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #18181B;
+}
+
+/* 按钮配置卡片 */
+.notification-settings-page ::deep .button-config-space {
+    width: 100%;
+}
+
+.notification-settings-page ::deep .button-config-card {
+    width: 100%;
+    background-color: #F9FAFB;
+    border: 1px solid #E4E4E7;
+    border-radius: 12px;
+}
+
+.notification-settings-page ::deep .button-config-card .ant-card-body {
+    padding: 12px;
+}
+
+.notification-settings-page ::deep .button-config-inner {
+    width: 100%;
+}
+
+.notification-settings-page ::deep .button-config-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-settings-page ::deep .button-config-delete {
+    margin-left: auto;
+}
+
+.notification-settings-page ::deep .button-input-group {
+    width: 100%;
+}
+
+.notification-settings-page ::deep .button-input-group .ant-input {
+    width: 100%;
+}
+
+/* Drawer 底部按钮 */
+.notification-settings-page ::deep .drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #E4E4E7;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #FFFFFF;
+}
+
+.notification-settings-page ::deep .drawer-footer .ant-btn {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Radio Group 样式 */
+.notification-settings-page ::deep .ant-radio-button-wrapper {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .notification-settings-content {
+        padding: 24px 16px;
+    }
+
+    .notification-settings-page ::deep .ant-page-header {
+        padding: 24px 16px 0 16px;
+    }
+
+    .notification-settings-page ::deep .page-header-title {
+        font-size: 24px;
+    }
+
+    .notification-settings-page ::deep .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .notification-settings-page ::deep .action-buttons {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .notification-settings-page ::deep .button-config-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .notification-settings-page ::deep .button-config-delete {
+        margin-left: 0;
+    }
+}

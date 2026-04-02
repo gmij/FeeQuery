@@ -1,0 +1,133 @@
+@page "/alert-diagnostic"
+@rendermode InteractiveServer
+@using FeeQuery.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageHeader Title="预警诊断" />
+
+<Space Direction="@SpaceDirection.Vertical" Style="width: 100%;" Size="@("large")">
+    <SpaceItem>
+        <Button Type="@ButtonType.Primary" OnClick="LoadDiagnosticData">刷新数据</Button>
+    </SpaceItem>
+
+    <SpaceItem>
+        <Card Title="预警规则">
+            <pre>@alertRulesInfo</pre>
+        </Card>
+    </SpaceItem>
+
+    <SpaceItem>
+        <Card Title="云账号余额">
+            <pre>@accountBalancesInfo</pre>
+        </Card>
+    </SpaceItem>
+
+    <SpaceItem>
+        <Card Title="预警历史（最近10条）">
+            <pre>@alertHistoriesInfo</pre>
+        </Card>
+    </SpaceItem>
+
+    <SpaceItem>
+        <Card Title="余额历史（最近20条）">
+            <pre>@balanceHistoriesInfo</pre>
+        </Card>
+    </SpaceItem>
+</Space>
+
+@code {
+    private string alertRulesInfo = "加载中...";
+    private string accountBalancesInfo = "加载中...";
+    private string alertHistoriesInfo = "加载中...";
+    private string balanceHistoriesInfo = "加载中...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDiagnosticData();
+    }
+
+    private async Task LoadDiagnosticData()
+    {
+        try
+        {
+            // 预警规则
+            var rules = await DbContext.AlertRules.ToListAsync();
+            alertRulesInfo = string.Join("\n\n", rules.Select(r =>
+                $"ID: {r.Id}\n" +
+                $"名称: {r.Name}\n" +
+                $"账号ID: {r.CloudAccountId?.ToString() ?? "全局"}\n" +
+                $"类型: {r.AlertType}\n" +
+                $"阈值: {r.Threshold}\n" +
+                $"比较符: {r.ComparisonOperator}\n" +
+                $"启用: {r.IsEnabled}\n" +
+                $"通知渠道: {r.NotificationChannels}"
+            ));
+
+            // 账号余额
+            var accounts = await DbContext.CloudAccounts.Where(a => a.IsEnabled).ToListAsync();
+            var balances = await DbContext.BalanceHistories
+                .Where(h => h.Status == "Success")
+                .GroupBy(h => h.CloudAccountId)
+                .Select(g => new
+                {
+                    AccountId = g.Key,
+                    LatestBalance = g.OrderByDescending(h => h.RecordedAt).FirstOrDefault()
+                })
+                .ToListAsync();
+
+            accountBalancesInfo = string.Join("\n\n", accounts.Select(a =>
+            {
+                var balance = balances.FirstOrDefault(b => b.AccountId == a.Id);
+                return $"ID: {a.Id}\n" +
+                       $"名称: {a.Name}\n" +
+                       $"厂商: {a.ProviderName}\n" +
+                       $"最新余额: {balance?.LatestBalance?.AvailableBalance.ToString("N2") ?? "无数据"} 元\n" +
+                       $"最后同步: {balance?.LatestBalance?.RecordedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "从未"}";
+            }));
+
+            // 预警历史
+            var histories = await DbContext.AlertHistories
+                .Include(h => h.CloudAccount)
+                .Include(h => h.AlertRule)
+                .OrderByDescending(h => h.TriggeredAt)
+                .Take(10)
+                .ToListAsync();
+
+            alertHistoriesInfo = histories.Count > 0
+                ? string.Join("\n\n", histories.Select(h =>
+                    $"ID: {h.Id}\n" +
+                    $"账号: {h.CloudAccount?.Name}\n" +
+                    $"规则: {h.AlertRule?.Name}\n" +
+                    $"触发时间: {h.TriggeredAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}\n" +
+                    $"实际余额: {h.ActualAmount:N2} 元\n" +
+                    $"阈值: {h.ThresholdAmount:N2} 元\n" +
+                    $"状态: {h.Status}\n" +
+                    $"通知已发: {h.NotificationSent}"
+                ))
+                : "无预警历史";
+
+            // 余额历史
+            var balanceHist = await DbContext.BalanceHistories
+                .Include(h => h.CloudAccount)
+                .OrderByDescending(h => h.RecordedAt)
+                .Take(20)
+                .ToListAsync();
+
+            balanceHistoriesInfo = string.Join("\n\n", balanceHist.Select(h =>
+                $"账号: {h.CloudAccount?.Name}\n" +
+                $"时间: {h.RecordedAt.ToLocalTime():yyyy-MM-dd HH:mm:ss}\n" +
+                $"余额: {h.AvailableBalance:N2} 元\n" +
+                $"状态: {h.Status}\n" +
+                $"来源: {h.Source}"
+            ));
+        }
+        catch (Exception ex)
+        {
+            alertRulesInfo = $"错误: {ex.Message}";
+            accountBalancesInfo = $"错误: {ex.Message}";
+            alertHistoriesInfo = $"错误: {ex.Message}";
+            balanceHistoriesInfo = $"错误: {ex.Message}";
+        }
+    }
+}
