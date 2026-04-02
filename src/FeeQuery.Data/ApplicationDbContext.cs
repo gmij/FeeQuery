@@ -114,8 +114,6 @@ public class ApplicationDbContext : DbContext, IDataProtectionKeyContext
             entity.Property(e => e.AlertType).IsRequired().HasMaxLength(50);
             entity.Property(e => e.PeriodType).IsRequired().HasMaxLength(50);
             entity.Property(e => e.ComparisonOperator).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.NotificationChannels).IsRequired();
-            entity.Property(e => e.NotificationTargets).IsRequired();
 
             entity.HasIndex(e => e.CloudAccountId);
             entity.HasIndex(e => e.IsEnabled);

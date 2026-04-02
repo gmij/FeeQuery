@@ -264,33 +264,7 @@ public class BalanceAlertService
             }
         }
 
-        // 兼容旧的 NotificationChannels 字段
-        if (!string.IsNullOrEmpty(rule.NotificationChannels))
-        {
-            var channels = rule.NotificationChannels.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var channel in channels)
-            {
-                try
-                {
-                    await _notificationService.SendNotificationAsync(
-                        channel.Trim(),
-                        title,
-                        content,
-                        cancellationToken);
-
-                    _logger.LogInformation("已通过 {Channel} 发送恢复通知", channel);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "通过 {Channel} 发送恢复通知失败", channel);
-                }
-            }
-        }
-        else
-        {
-            _logger.LogWarning("预警规则 {RuleName} 未配置任何通知渠道，恢复通知未发送", rule.Name);
-        }
+        _logger.LogWarning("预警规则 {RuleName} 未配置任何通知渠道，恢复通知未发送", rule.Name);
     }
 
     /// <summary>
@@ -523,33 +497,7 @@ public class BalanceAlertService
             }
         }
 
-        // 兼容旧的 NotificationChannels 字段
-        if (!string.IsNullOrEmpty(rule.NotificationChannels))
-        {
-            var channels = rule.NotificationChannels.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var channel in channels)
-            {
-                try
-                {
-                    await _notificationService.SendNotificationAsync(
-                        channel.Trim(),
-                        title,
-                        content,
-                        cancellationToken);
-
-                    _logger.LogInformation("已通过 {Channel} 发送预警通知", channel);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "通过 {Channel} 发送通知失败", channel);
-                }
-            }
-        }
-        else
-        {
-            _logger.LogWarning("预警规则 {RuleName} 未配置任何通知渠道", rule.Name);
-        }
+        _logger.LogWarning("预警规则 {RuleName} 未配置任何通知渠道", rule.Name);
     }
 
     /// <summary>

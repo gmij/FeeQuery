@@ -100,8 +100,6 @@ public class BalanceAlertIntegrationTest : IDisposable
             Threshold = 100m,
             ComparisonOperator = "less_than",
             PeriodType = "daily",
-            NotificationChannels = "email",
-            NotificationTargets = "{}",
             IsEnabled = true
         };
         _context.AlertRules.Add(alertRule);
@@ -162,8 +160,6 @@ public class BalanceAlertIntegrationTest : IDisposable
             Threshold = 100m,
             ComparisonOperator = "less_than",
             PeriodType = "daily",
-            NotificationChannels = "email",
-            NotificationTargets = "{}",
             IsEnabled = true
         };
         _context.AlertRules.Add(alertRule);
@@ -208,8 +204,6 @@ public class BalanceAlertIntegrationTest : IDisposable
             Threshold = 200m,
             ComparisonOperator = "less_than",
             PeriodType = "daily",
-            NotificationChannels = "email",
-            NotificationTargets = "{}",
             IsEnabled = true
         };
         _context.AlertRules.Add(alertRule);
@@ -256,8 +250,6 @@ public class BalanceAlertIntegrationTest : IDisposable
             ComparisonOperator = "less_than",
             BalanceType = "available",
             PeriodType = "daily",
-            NotificationChannels = "email",
-            NotificationTargets = "{}",
             IsEnabled = true
         };
         _context.AlertRules.Add(alertRule);

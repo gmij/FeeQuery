@@ -24,7 +24,7 @@
 | 华为云 | 公有云 | AccessKey / SecretAccessKey |
 | 百度云 | 公有云 | AccessKeyId / SecretAccessKey |
 | 火山引擎（字节跳动）| 公有云 | AccessKeyId / SecretAccessKey |
-| MiniMax | AI 模型 | GroupId / ApiKey（含透支���额检测）|
+| MiniMax | AI 模型 | GroupId / ApiKey（含透支金额检测）|
 | SiliconFlow | AI 模型 | ApiKey |
 | 万界坊州 | AI 模型 | ApiKey |
 

@@ -86,20 +86,6 @@ public class AlertRule
     public string NotificationConfigIds { get; set; } = string.Empty;
 
     /// <summary>
-    /// 通知渠道（多个渠道用逗号分隔，如 "email,webhook"）
-    /// 已废弃，保留用于向后兼容
-    /// </summary>
-    [Obsolete("请使用 NotificationConfigIds 字段")]
-    public string NotificationChannels { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 通知目标（JSON格式，如邮箱地址、Webhook URL等）
-    /// 已废弃，保留用于向后兼容
-    /// </summary>
-    [Obsolete("请使用 NotificationConfigIds 字段")]
-    public string NotificationTargets { get; set; } = string.Empty;
-
-    /// <summary>
     /// 备注
     /// </summary>
     public string? Remark { get; set; }
