@@ -2,7 +2,7 @@
 
 > 统一管理多家主流云厂商账号，实现费用集中追踪、余额监控和预警通知。
 
-[![CI](https://github.com/your-org/feequery/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/feequery/actions/workflows/ci.yml)
+[![CI](https://github.com/gmij/feequery/actions/workflows/ci.yml/badge.svg)](https://github.com/gmij/feequery/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/download/dotnet/10.0)
 
@@ -42,7 +42,7 @@
 **前置要求**：Docker 和 Docker Compose
 
 ```bash
-git clone https://github.com/your-org/feequery.git
+git clone https://github.com/gmij/feequery.git
 cd feequery
 docker-compose up -d
 ```
@@ -54,7 +54,7 @@ docker-compose up -d
 **前置要求**：[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 ```bash
-git clone https://github.com/your-org/feequery.git
+git clone https://github.com/gmij/feequery.git
 cd feequery
 dotnet run --project src/FeeQuery.Web
 ```
