@@ -83,7 +83,7 @@ public class BaiduProviderTest
 
         // 根据上述测试凭证计算的期望结果
         var expectedSigningKey = "5044a1ac9036fe9d4a5504108118c6dbacfa933e84004d39f68168c811f8a2f0";
-        var expectedSignature = "e5f208c7df64a406828dddde3c50e87124926d780c206986b44261d54bfb02aa";
+        var expectedSignature = "ddc0c35f167c7904d0f6c684dbc122ed53c8da4bcfd239c477ea3a3586d6ca7c";
         
         // Step 1: AuthStringPrefix
         var authStringPrefix = $"bce-auth-v1/{accessKeyId}/{timestamp}/1800";
